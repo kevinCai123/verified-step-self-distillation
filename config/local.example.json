@@ -1,0 +1,4 @@
+{
+  "model_path": "/absolute/path/to/Qwen3.5-9B",
+  "index": "data/index/wiki.sqlite"
+}

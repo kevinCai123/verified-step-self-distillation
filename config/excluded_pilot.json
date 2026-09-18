@@ -1,0 +1,33 @@
+{
+  "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa%2Fhotpot_qa&config=distractor&split=train&offset=0&length=24",
+  "sha256": "e5560f41def121af6e6111e9fe148b65ce28f85472ff7cc753c8219a60f8336f",
+  "rows": 24,
+  "selection": "First 24 official training rows for infrastructure pilot only; no validation/test rows fetched.",
+  "ids": [
+    "5a7a06935542990198eaf050",
+    "5a879ab05542996e4f30887e",
+    "5a8d7341554299441c6b9fe5",
+    "5a82171f5542990a1d231f4a",
+    "5a84dd955542997b5ce3ff79",
+    "5a7e36045542991319bc9440",
+    "5adf44985542993a75d2646d",
+    "5a832c3455429954d2e2ec41",
+    "5a7d0db955429909bec76924",
+    "5a89372855429951533612e6",
+    "5abd90545542996e802b47d7",
+    "5aba66c855429939ce03dcdb",
+    "5a7722d655429966f1a36c99",
+    "5ade025e5542997dc790711e",
+    "5ab381b155429969a97a816b",
+    "5ae0d91e55429924de1b7198",
+    "5ac2a5d455429921a00ab01b",
+    "5adc1309554299438c868d3b",
+    "5a83168855429966c78a6b2e",
+    "5ab698885542995eadef002a",
+    "5ab345db55429969a97a8122",
+    "5adf732a5542993a75d264e9",
+    "5ac2a912554299218029dae8",
+    "5a7272eb5542997f827839d7"
+  ],
+  "total_train_rows_reported": 90447
+}

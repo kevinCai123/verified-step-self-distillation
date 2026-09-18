@@ -1,0 +1,405 @@
+{
+  "audited_at": "2026-09-17T15:49:05.480586+00:00",
+  "state": {
+    "updates": 24,
+    "cursor": 5000,
+    "policy_id": "adapter:c069a76aab24165ea936067b756e5b92dcb1a82e1cc8ae297bea59df9ecb5d48",
+    "checkpoint": "runs/round1-seed42/checkpoints/step-024",
+    "phase": "round 1 complete; review internal-development results before further rounds",
+    "complete": true,
+    "pilot_records_available": 14,
+    "pilot_records_used": 8,
+    "pilot_records_discarded_after_update": 6,
+    "updated": "2026-09-17T11:09:06.938044+00:00",
+    "unused_final_records": 0
+  },
+  "splits": {
+    "internal_dev": {
+      "count": 1500,
+      "sha256": "5198017373e0eda6823af2ebf00fb3b90d28eedf5558c63e8c1609044c9261ab"
+    },
+    "repair_benchmark": {
+      "count": 500,
+      "sha256": "eb08329b3abbae806f02ac7c3ee5372d360489100a452b891df580e2fbeedad5"
+    },
+    "round1": {
+      "count": 5000,
+      "sha256": "d5da85ae5f0b48e36e35515a6d3ccc421af23638cefde64f9c1508c00f8f6191"
+    },
+    "round2": {
+      "count": 5000,
+      "sha256": "fef67702f07df503c26ad8195ffcb9726f1569f9e27e1e186e4ad27bbed5ac9b"
+    },
+    "pilot": {
+      "count": 500,
+      "sha256": "30f52a3c9a58b5acf11ac4ae14346e2a051e8c395ee0d2921bb79ee77d05dbed"
+    },
+    "dev_monitor": {
+      "count": 500,
+      "sha256": "c3b576d4863080b6fefdeca6e7f5f9dceec22f89c72a03e1c253fd82d4096e47"
+    }
+  },
+  "excluded_questions": 37,
+  "final_reserved_questions": 7405,
+  "collection": {
+    "failed_student_trajectories": 3732,
+    "ambiguous_answer_exclusions": 852,
+    "diagnosis_errors": 439,
+    "proposals": 6234,
+    "legal_proposals": 3354,
+    "candidates_sent_to_confirmation": 291,
+    "confirmed_repairs": 198,
+    "questions": 5000,
+    "confirmed_yield": 0.0396,
+    "repair_at3_training_failures": 0.05305466237942122,
+    "legal_proposal_rate": 0.5380173243503369,
+    "mean_confirmation_gain": 0.6151202749140894,
+    "replacement_types": {
+      "search": 188,
+      "finish": 1,
+      "read": 9
+    },
+    "diagnostic_ranks": {
+      "3": 14,
+      "1": 144,
+      "2": 40
+    },
+    "step_positions_one_based": {
+      "3": 45,
+      "1": 116,
+      "4": 4,
+      "2": 25,
+      "5": 7,
+      "9": 1
+    },
+    "costs": {
+      "model_calls": 86181,
+      "tool_calls": 73302,
+      "question_processing_seconds": 136686.2128791035,
+      "input_tokens": 73269993,
+      "output_tokens": 2547494
+    },
+    "seconds_per_confirmed_repair": 690.3344084803207,
+    "role_metrics_over_changing_checkpoints": {
+      "student": {
+        "answer_em": 0.521,
+        "answer_f1": 0.5991383301525967,
+        "support_em": 0.1296,
+        "support_f1": 0.4863720634920658,
+        "joint_em": 0.0642,
+        "joint_f1": 0.35687082497465733,
+        "citation_valid": 0.846,
+        "support_exposed": 0.3782,
+        "grounded_success": 0.2536,
+        "answer_alias_ambiguous": 0.1704
+      },
+      "teacher": {
+        "answer_em": 0.5686,
+        "answer_f1": 0.6518722357469992,
+        "support_em": 0.1818,
+        "support_f1": 0.5579341269841248,
+        "joint_em": 0.0926,
+        "joint_f1": 0.41043029991773017,
+        "citation_valid": 0.8984,
+        "support_exposed": 0.4646,
+        "grounded_success": 0.2986,
+        "answer_alias_ambiguous": 0.1766
+      }
+    },
+    "role_errors": {
+      "student": {
+        "ValueError: Tool budget exhausted": 544,
+        "ValueError: Invalid citation schema": 7,
+        "JSONDecodeError: Expecting ',' delimiter: line 107 column 1 (char 2510)": 1,
+        "JSONDecodeError: Expecting ',' delimiter: line 373 column 1 (char 1294)": 1,
+        "JSONDecodeError: Unterminated string starting at: line 1 column 370 (char 369)": 1,
+        "JSONDecodeError: Unterminated string starting at: line 1 column 182 (char 181)": 1,
+        "PermissionError: Document was not retrieved by this role": 2
+      },
+      "teacher": {
+        "ValueError: Tool budget exhausted": 339,
+        "PermissionError: Document was not retrieved by this role": 11,
+        "ValueError: Invalid citation schema": 4,
+        "JSONDecodeError: Expecting ',' delimiter: line 941 column 1 (char 1594)": 1,
+        "ValueError: Prompt budget exceeded: 6241>6144": 1
+      }
+    }
+  },
+  "training": {
+    "updates": 24,
+    "used_records": 192,
+    "accepted_but_unused": 6,
+    "used_replacement_types": {
+      "search": 182,
+      "finish": 1,
+      "read": 9
+    },
+    "subprocess_seconds_including_loading_and_checkpoint_io": 2519.1405560970306,
+    "peak_allocated_cuda_gib": 22.77338933944702,
+    "trainable_parameters": 43278336,
+    "student_prefix_tokens_range": [
+      170,
+      1400
+    ],
+    "teacher_prefix_tokens_range": [
+      318,
+      1866
+    ],
+    "sampled_action_tokens_total": 6819,
+    "first_update_mean_jsd": 0.060555104399099946,
+    "last_update_mean_jsd": 0.03630020658602007,
+    "all_checkpoints_reload_equal": true,
+    "optimizer_restored_updates": 23
+  },
+  "evaluations": {
+    "0": {
+      "questions": 500,
+      "expected_questions": 500,
+      "complete": true,
+      "policy_id": "base:c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "answer_em": 0.528,
+      "answer_f1": 0.6162576678223737,
+      "support_f1": 0.5029095238095238,
+      "joint_f1": 0.3744496318664195,
+      "grounded_success": 0.276,
+      "failures": 67,
+      "elapsed_seconds": 2733.3166765200003,
+      "model_calls": 2656,
+      "tool_calls": 2156,
+      "extra_metrics": {
+        "answer_em": 0.528,
+        "answer_f1": 0.6162576678223737,
+        "support_em": 0.154,
+        "support_f1": 0.5029095238095238,
+        "joint_em": 0.07,
+        "joint_f1": 0.3744496318664195,
+        "citation_valid": 0.848,
+        "support_exposed": 0.414,
+        "grounded_success": 0.276,
+        "answer_alias_ambiguous": 0.164
+      },
+      "config": {
+        "questions": "data/splits/dev_monitor.jsonl",
+        "index": "data/index/wiki.sqlite",
+        "model_path": "models/Qwen3.5-9B",
+        "model": "Qwen/Qwen3.5-9B",
+        "policy_id": "base:c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+        "output": "runs/round1-seed42/evaluations/step-000",
+        "endpoint": "http://127.0.0.1:8093",
+        "limit": 500,
+        "questions_sha256": "c3b576d4863080b6fefdeca6e7f5f9dceec22f89c72a03e1c253fd82d4096e47",
+        "protocol_sha256": "816e6e7796946e1dc69ee5e9a3b06ec664caa04701dc44ed88fda5cce6f4f142"
+      },
+      "input_tokens": 1567018,
+      "output_tokens": 52860,
+      "error_types": {
+        "ValueError: Tool budget exhausted": 60,
+        "PermissionError: Document was not retrieved by this role": 2,
+        "ValueError: Invalid citation schema": 5
+      }
+    },
+    "1": {
+      "questions": 500,
+      "expected_questions": 500,
+      "complete": true,
+      "policy_id": "adapter:3504edc95ffaef3edfa6575fbf8d5293104695215c145d45faca82b4f3ae971a",
+      "answer_em": 0.53,
+      "answer_f1": 0.6162306135893092,
+      "support_f1": 0.49824285714285715,
+      "joint_f1": 0.3743567843630457,
+      "grounded_success": 0.276,
+      "failures": 66,
+      "elapsed_seconds": 3436.5577337069926,
+      "model_calls": 2648,
+      "tool_calls": 2148,
+      "extra_metrics": {
+        "answer_em": 0.53,
+        "answer_f1": 0.6162306135893092,
+        "support_em": 0.15,
+        "support_f1": 0.49824285714285715,
+        "joint_em": 0.068,
+        "joint_f1": 0.3743567843630457,
+        "citation_valid": 0.85,
+        "support_exposed": 0.41,
+        "grounded_success": 0.276,
+        "answer_alias_ambiguous": 0.164
+      },
+      "config": {
+        "questions": "data/splits/dev_monitor.jsonl",
+        "index": "data/index/wiki.sqlite",
+        "model_path": "models/Qwen3.5-9B",
+        "model": "step-1-3504edc95ffa",
+        "policy_id": "adapter:3504edc95ffaef3edfa6575fbf8d5293104695215c145d45faca82b4f3ae971a",
+        "output": "runs/round1-seed42/evaluations/step-001",
+        "endpoint": "http://127.0.0.1:8093",
+        "limit": 500,
+        "questions_sha256": "c3b576d4863080b6fefdeca6e7f5f9dceec22f89c72a03e1c253fd82d4096e47",
+        "protocol_sha256": "816e6e7796946e1dc69ee5e9a3b06ec664caa04701dc44ed88fda5cce6f4f142"
+      },
+      "input_tokens": 1557019,
+      "output_tokens": 52768,
+      "error_types": {
+        "ValueError: Tool budget exhausted": 61,
+        "PermissionError: Document was not retrieved by this role": 3,
+        "ValueError: Invalid citation schema": 2
+      }
+    },
+    "24": {
+      "questions": 500,
+      "expected_questions": 500,
+      "complete": true,
+      "policy_id": "adapter:c069a76aab24165ea936067b756e5b92dcb1a82e1cc8ae297bea59df9ecb5d48",
+      "answer_em": 0.53,
+      "answer_f1": 0.6162141978201207,
+      "support_f1": 0.504547619047619,
+      "joint_f1": 0.38079478542531664,
+      "grounded_success": 0.266,
+      "failures": 53,
+      "elapsed_seconds": 3833.26160447696,
+      "model_calls": 2640,
+      "tool_calls": 2140,
+      "extra_metrics": {
+        "answer_em": 0.53,
+        "answer_f1": 0.6162141978201207,
+        "support_em": 0.158,
+        "support_f1": 0.504547619047619,
+        "joint_em": 0.086,
+        "joint_f1": 0.38079478542531664,
+        "citation_valid": 0.838,
+        "support_exposed": 0.398,
+        "grounded_success": 0.266,
+        "answer_alias_ambiguous": 0.174
+      },
+      "config": {
+        "questions": "data/splits/dev_monitor.jsonl",
+        "index": "data/index/wiki.sqlite",
+        "model_path": "models/Qwen3.5-9B",
+        "model": "step-24-c069a76aab24",
+        "policy_id": "adapter:c069a76aab24165ea936067b756e5b92dcb1a82e1cc8ae297bea59df9ecb5d48",
+        "output": "runs/round1-seed42/evaluations/step-024",
+        "endpoint": "http://127.0.0.1:8093",
+        "limit": 500,
+        "questions_sha256": "c3b576d4863080b6fefdeca6e7f5f9dceec22f89c72a03e1c253fd82d4096e47",
+        "protocol_sha256": "816e6e7796946e1dc69ee5e9a3b06ec664caa04701dc44ed88fda5cce6f4f142"
+      },
+      "input_tokens": 1575858,
+      "output_tokens": 61355,
+      "error_types": {
+        "ValueError: Tool budget exhausted": 53
+      }
+    }
+  },
+  "paired_question_changes": {
+    "answer_em": {
+      "unchanged": 469,
+      "improved": 16,
+      "regressed": 15
+    },
+    "grounded_success": {
+      "unchanged": 471,
+      "improved": 12,
+      "regressed": 17
+    },
+    "joint_f1": {
+      "unchanged": 422,
+      "regressed": 34,
+      "improved": 44
+    }
+  },
+  "final_comparison": {
+    "questions": 500,
+    "baseline_policy": "base:c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "updated_policy": "adapter:c069a76aab24165ea936067b756e5b92dcb1a82e1cc8ae297bea59df9ecb5d48",
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 42,
+    "scope": "internal development, not final evaluation",
+    "metrics": {
+      "answer_em": {
+        "baseline": 0.528,
+        "updated": 0.53,
+        "delta": 0.002,
+        "paired_ci95": [
+          -0.02,
+          0.024
+        ]
+      },
+      "answer_f1": {
+        "baseline": 0.6162576678223737,
+        "updated": 0.6162141978201207,
+        "delta": -4.347000225314982e-05,
+        "paired_ci95": [
+          -0.020937385319994017,
+          0.020468135350488293
+        ]
+      },
+      "support_f1": {
+        "baseline": 0.5029095238095238,
+        "updated": 0.504547619047619,
+        "delta": 0.0016380952380952384,
+        "paired_ci95": [
+          -0.014485714285714286,
+          0.017628571428571427
+        ]
+      },
+      "joint_f1": {
+        "baseline": 0.3744496318664195,
+        "updated": 0.38079478542531664,
+        "delta": 0.00634515355889712,
+        "paired_ci95": [
+          -0.009059141376487535,
+          0.021441532023449113
+        ]
+      },
+      "grounded_success": {
+        "baseline": 0.276,
+        "updated": 0.266,
+        "delta": -0.01,
+        "paired_ci95": [
+          -0.032,
+          0.01
+        ]
+      }
+    }
+  },
+  "pilot_summary": {
+    "questions": 500,
+    "student": {
+      "answer_em": 0.548,
+      "answer_f1": 0.6161088362252375,
+      "support_f1": 0.5025714285714286,
+      "joint_f1": 0.3679807137584582,
+      "grounded_success": 0.278,
+      "failures": 59
+    },
+    "teacher": {
+      "answer_em": 0.59,
+      "answer_f1": 0.6544100899314579,
+      "support_f1": 0.5557047619047619,
+      "joint_f1": 0.40492769866669276,
+      "grounded_success": 0.308,
+      "failures": 43
+    },
+    "failed_student_trajectories": 361,
+    "confirmed_repairs": 14,
+    "training_yield": 0.028,
+    "repair_at_3": 0.038781163434903045,
+    "candidate_proposals": 601,
+    "legal_proposals": 330,
+    "legal_rate": 0.5490848585690515,
+    "model_calls": 8519,
+    "input_tokens": 7250208,
+    "output_tokens": 244488,
+    "tool_calls": 7237,
+    "elapsed_seconds": 8144.191452598985,
+    "seconds_per_confirmed_repair": 581.7279608999276,
+    "confirmation_candidates": 22,
+    "paired_replay_gain": 0.6363636363636364
+  },
+  "audit_checks": {
+    "round1_ids_complete_unique": true,
+    "dev_ids_match_and_disjoint": true,
+    "evaluation_protocols_match": true,
+    "saved_evaluation_means_match": true,
+    "all_used_repairs_confirmed_and_unique": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "model": "Qwen/Qwen3.5-9B",
+  "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "dataset": "hotpotqa/hotpot_qa",
+  "dataset_revision": "1908d6afbbead072334abe2965f91bd2709910ab",
+  "local_experiment_commit": "aa3dfa14492e3f88588d066b68ec19c40f0dfa6f",
+  "publication": "Initial source and aggregate-results snapshot; raw datasets, rollouts, checkpoints and machine settings are excluded.",
+  "packaging_changes": [
+    "Editable lock entries normalized to -e .; dependency version pins unchanged.",
+    "Bootstrap accepts uv on PATH and keeps committed lock files unchanged.",
+    "Dataset download defaults to the recorded revision.",
+    "Reports use repository-relative paths and bundled aggregate results."
+  ],
+  "experiment_logic": "Student/teacher permissions, repair verification, OPSD objective, training loop and evaluation code unchanged."
+}
