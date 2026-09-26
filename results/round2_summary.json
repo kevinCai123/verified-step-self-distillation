@@ -1,0 +1,452 @@
+{
+  "generated_at": "2026-09-26",
+  "development_split": "data/splits/internal_dev.jsonl",
+  "questions": 1500,
+  "bootstrap": {
+    "samples": 2000,
+    "seed": 42
+  },
+  "learning_rate": 2e-05,
+  "arms": {
+    "A": {
+      "description": "verified critical-step OPSD (the method)",
+      "run": "runs/round1b-seed42",
+      "updates": 32,
+      "cursor": 2500,
+      "complete": true,
+      "config": {
+        "repair_mode": "verified",
+        "step_selection": "ranked",
+        "objective": "opsd",
+        "loss_tokens": "content",
+        "train_learning_rate": null,
+        "batch_size": 8,
+        "fresh_records_per_update": 2,
+        "replay_window_updates": 4,
+        "max_record_reuse": 4,
+        "max_updates": 200,
+        "max_questions": 2500,
+        "lora_rank": 16,
+        "jsd_beta": null,
+        "dpo_beta": 0.1
+      },
+      "fresh_yield": {
+        "attempted": 2500,
+        "verified": 70
+      },
+      "final_step": 32,
+      "final_policy_id": "adapter:52a0ec4541309a2cf8565940b39e9c662e8a3ed7c28bade74ce77835da25b2b7",
+      "baseline": {
+        "answer_em": 0.5133333333333333,
+        "answer_f1": 0.6013263265660016,
+        "support_em": null,
+        "support_f1": 0.4977015873015873,
+        "joint_em": null,
+        "joint_f1": 0.3612563103729349,
+        "grounded_success": 0.24466666666666667,
+        "failures": 181,
+        "questions": 1500,
+        "complete": true
+      },
+      "final": {
+        "answer_em": 0.5886666666666667,
+        "answer_f1": 0.6542463068259533,
+        "support_em": null,
+        "support_f1": 0.5145285714285714,
+        "joint_em": null,
+        "joint_f1": 0.4493702316812415,
+        "grounded_success": 0.4553333333333333,
+        "failures": 316,
+        "questions": 1500,
+        "complete": true
+      },
+      "paired_vs_base": {
+        "answer_em": {
+          "baseline": 0.5133333333333333,
+          "updated": 0.5886666666666667,
+          "delta": 0.07533333333333334,
+          "paired_ci95": [
+            0.051333333333333335,
+            0.10066666666666667
+          ]
+        },
+        "answer_f1": {
+          "baseline": 0.6013263265660016,
+          "updated": 0.6542463068259533,
+          "delta": 0.05291998025995171,
+          "paired_ci95": [
+            0.029063432042417833,
+            0.07700551144492472
+          ]
+        },
+        "support_f1": {
+          "baseline": 0.4977015873015873,
+          "updated": 0.5145285714285714,
+          "delta": 0.016826984126984135,
+          "paired_ci95": [
+            -0.0012888888888888852,
+            0.033384126984127044
+          ]
+        },
+        "joint_f1": {
+          "baseline": 0.3612563103729349,
+          "updated": 0.4493702316812415,
+          "delta": 0.08811392130830649,
+          "paired_ci95": [
+            0.06945625126117087,
+            0.10721698051779383
+          ]
+        },
+        "grounded_success": {
+          "baseline": 0.24466666666666667,
+          "updated": 0.4553333333333333,
+          "delta": 0.21066666666666667,
+          "paired_ci95": [
+            0.18466666666666667,
+            0.236
+          ]
+        }
+      }
+    },
+    "D": {
+      "description": "random-step OPSD control",
+      "run": "runs/armD-seed42",
+      "updates": 23,
+      "cursor": 2500,
+      "complete": true,
+      "config": {
+        "repair_mode": "verified",
+        "step_selection": "random",
+        "objective": "opsd",
+        "loss_tokens": "content",
+        "train_learning_rate": null,
+        "batch_size": 8,
+        "fresh_records_per_update": 2,
+        "replay_window_updates": 4,
+        "max_record_reuse": 4,
+        "max_updates": 200,
+        "max_questions": 2500,
+        "lora_rank": 16,
+        "jsd_beta": null,
+        "dpo_beta": 0.1
+      },
+      "fresh_yield": {
+        "attempted": 2500,
+        "verified": 53
+      },
+      "final_step": 23,
+      "final_policy_id": "adapter:850eecd3df72019a345ff73d2acecdda5d3f8a546b13dda5f58ca0b9e69a9806",
+      "baseline": {
+        "answer_em": 0.5133333333333333,
+        "answer_f1": 0.6013263265660016,
+        "support_em": null,
+        "support_f1": 0.4977015873015873,
+        "joint_em": null,
+        "joint_f1": 0.3612563103729349,
+        "grounded_success": 0.24466666666666667,
+        "failures": 181,
+        "questions": 1500,
+        "complete": true
+      },
+      "final": {
+        "answer_em": 0.5486666666666666,
+        "answer_f1": 0.601316252074379,
+        "support_em": null,
+        "support_f1": 0.4327735930735931,
+        "joint_em": null,
+        "joint_f1": 0.37761044524425375,
+        "grounded_success": 0.44266666666666665,
+        "failures": 396,
+        "questions": 1500,
+        "complete": true
+      },
+      "paired_vs_base": {
+        "answer_em": {
+          "baseline": 0.5133333333333333,
+          "updated": 0.5486666666666666,
+          "delta": 0.035333333333333335,
+          "paired_ci95": [
+            0.008,
+            0.06266666666666666
+          ]
+        },
+        "answer_f1": {
+          "baseline": 0.6013263265660016,
+          "updated": 0.601316252074379,
+          "delta": -1.0074491622542462e-05,
+          "paired_ci95": [
+            -0.02668331305297838,
+            0.02627404731108512
+          ]
+        },
+        "support_f1": {
+          "baseline": 0.4977015873015873,
+          "updated": 0.4327735930735931,
+          "delta": -0.06492799422799422,
+          "paired_ci95": [
+            -0.08514545454545455,
+            -0.04503116883116884
+          ]
+        },
+        "joint_f1": {
+          "baseline": 0.3612563103729349,
+          "updated": 0.37761044524425375,
+          "delta": 0.016354134871318902,
+          "paired_ci95": [
+            -0.004373696126504506,
+            0.037090441414209155
+          ]
+        },
+        "grounded_success": {
+          "baseline": 0.24466666666666667,
+          "updated": 0.44266666666666665,
+          "delta": 0.198,
+          "paired_ci95": [
+            0.17,
+            0.22666666666666666
+          ]
+        }
+      }
+    },
+    "C": {
+      "description": "DPO objective on the same verified pairs",
+      "run": "runs/armC-seed42",
+      "updates": 22,
+      "cursor": 2500,
+      "complete": true,
+      "config": {
+        "repair_mode": "verified",
+        "step_selection": "ranked",
+        "objective": "dpo",
+        "loss_tokens": "content",
+        "train_learning_rate": null,
+        "batch_size": 8,
+        "fresh_records_per_update": 2,
+        "replay_window_updates": 4,
+        "max_record_reuse": 4,
+        "max_updates": 200,
+        "max_questions": 2500,
+        "lora_rank": 16,
+        "jsd_beta": null,
+        "dpo_beta": 0.1
+      },
+      "fresh_yield": {
+        "attempted": 2500,
+        "verified": 50
+      },
+      "final_step": 22,
+      "final_policy_id": "adapter:c9376066e87a2c564063fde09a187a7e014ae166a015c18816237c70072b45ac",
+      "baseline": {
+        "answer_em": 0.5133333333333333,
+        "answer_f1": 0.6013263265660016,
+        "support_em": null,
+        "support_f1": 0.4977015873015873,
+        "joint_em": null,
+        "joint_f1": 0.3612563103729349,
+        "grounded_success": 0.24466666666666667,
+        "failures": 181,
+        "questions": 1500,
+        "complete": true
+      },
+      "final": {
+        "answer_em": 0.5266666666666666,
+        "answer_f1": 0.6111930457903534,
+        "support_em": null,
+        "support_f1": 0.4999968253968254,
+        "joint_em": null,
+        "joint_f1": 0.3693089518242213,
+        "grounded_success": 0.3353333333333333,
+        "failures": 49,
+        "questions": 1500,
+        "complete": true
+      },
+      "paired_vs_base": {
+        "answer_em": {
+          "baseline": 0.5133333333333333,
+          "updated": 0.5266666666666666,
+          "delta": 0.013333333333333334,
+          "paired_ci95": [
+            -0.006666666666666667,
+            0.03333333333333333
+          ]
+        },
+        "answer_f1": {
+          "baseline": 0.6013263265660016,
+          "updated": 0.6111930457903534,
+          "delta": 0.0098667192243518,
+          "paired_ci95": [
+            -0.00924669620250415,
+            0.029424532525202034
+          ]
+        },
+        "support_f1": {
+          "baseline": 0.4977015873015873,
+          "updated": 0.4999968253968254,
+          "delta": 0.002295238095238096,
+          "paired_ci95": [
+            -0.013766666666666665,
+            0.017971428571428572
+          ]
+        },
+        "joint_f1": {
+          "baseline": 0.3612563103729349,
+          "updated": 0.3693089518242213,
+          "delta": 0.008052641451286419,
+          "paired_ci95": [
+            -0.006224731316285438,
+            0.02299751679047862
+          ]
+        },
+        "grounded_success": {
+          "baseline": 0.24466666666666667,
+          "updated": 0.3353333333333333,
+          "delta": 0.09066666666666667,
+          "paired_ci95": [
+            0.06733333333333333,
+            0.11266666666666666
+          ]
+        }
+      }
+    },
+    "B": {
+      "description": "evidence-only privileged-context OPSD (stopped by premature-finish tripwire at update 20)",
+      "run": "runs/armB-seed42",
+      "updates": 20,
+      "cursor": 89,
+      "complete": false,
+      "config": {
+        "repair_mode": "evidence-only",
+        "step_selection": "ranked",
+        "objective": "opsd",
+        "loss_tokens": "content",
+        "train_learning_rate": null,
+        "batch_size": 8,
+        "fresh_records_per_update": 2,
+        "replay_window_updates": 4,
+        "max_record_reuse": 4,
+        "max_updates": 32,
+        "max_questions": 2500,
+        "lora_rank": 16,
+        "jsd_beta": null,
+        "dpo_beta": 0.1
+      },
+      "fresh_yield": {
+        "attempted": 89,
+        "verified": 46
+      },
+      "final_step": 20,
+      "final_policy_id": "adapter:1edc4145c2fd0f8d0d761b298fc12e1493f91e5afa3ebe53daadbbf7d56722f6",
+      "baseline": {
+        "answer_em": 0.5133333333333333,
+        "answer_f1": 0.6013263265660016,
+        "support_em": null,
+        "support_f1": 0.4977015873015873,
+        "joint_em": null,
+        "joint_f1": 0.3612563103729349,
+        "grounded_success": 0.24466666666666667,
+        "failures": 181,
+        "questions": 1500,
+        "complete": true
+      },
+      "final": {
+        "answer_em": 0.124,
+        "answer_f1": 0.21119133980170401,
+        "support_em": null,
+        "support_f1": 0.2516916305916306,
+        "joint_em": null,
+        "joint_f1": 0.07064169831017648,
+        "grounded_success": 0.0,
+        "failures": 42,
+        "questions": 1500,
+        "complete": true
+      },
+      "paired_vs_base": {
+        "answer_em": {
+          "baseline": 0.5133333333333333,
+          "updated": 0.124,
+          "delta": -0.3893333333333333,
+          "paired_ci95": [
+            -0.416,
+            -0.36133333333333334
+          ]
+        },
+        "answer_f1": {
+          "baseline": 0.6013263265660016,
+          "updated": 0.21119133980170401,
+          "delta": -0.39013498676429753,
+          "paired_ci95": [
+            -0.4156181181262457,
+            -0.36533564554768494
+          ]
+        },
+        "support_f1": {
+          "baseline": 0.4977015873015873,
+          "updated": 0.2516916305916306,
+          "delta": -0.2460099567099567,
+          "paired_ci95": [
+            -0.2690988455988456,
+            -0.223815873015873
+          ]
+        },
+        "joint_f1": {
+          "baseline": 0.3612563103729349,
+          "updated": 0.07064169831017648,
+          "delta": -0.29061461206275846,
+          "paired_ci95": [
+            -0.3090204518007675,
+            -0.2728785612542075
+          ]
+        },
+        "grounded_success": {
+          "baseline": 0.24466666666666667,
+          "updated": 0.0,
+          "delta": -0.24466666666666667,
+          "paired_ci95": [
+            -0.26666666666666666,
+            -0.22266666666666668
+          ]
+        }
+      }
+    }
+  },
+  "memorization_gate": {
+    "memorization-check": {
+      "records": 192,
+      "verdict": "does not learn: the objective/learning rate cannot even memorize the corrections; fix this before collecting more data",
+      "moved_toward_replacement": 0.109375,
+      "moved_away_from_replacement": 0.703125,
+      "after_action_types": null
+    },
+    "memorization-check-5e-5": {
+      "records": 192,
+      "verdict": "does not learn: the objective/learning rate cannot even memorize the corrections; fix this before collecting more data",
+      "moved_toward_replacement": 0.2604166666666667,
+      "moved_away_from_replacement": 0.4895833333333333,
+      "after_action_types": null
+    },
+    "memorization-correction-2e-5": {
+      "records": 192,
+      "verdict": "learns: greedy actions moved toward the verified corrections on the training prefixes",
+      "moved_toward_replacement": 0.4479166666666667,
+      "moved_away_from_replacement": 0.24479166666666666,
+      "after_action_types": {
+        "None": 8,
+        "finish": 2,
+        "read": 19,
+        "search": 163
+      }
+    },
+    "memorization-correction-legal": {
+      "records": 103,
+      "verdict": "learns: greedy actions moved toward the verified corrections on the training prefixes",
+      "moved_toward_replacement": 0.5339805825242718,
+      "moved_away_from_replacement": 0.1941747572815534,
+      "after_action_types": {
+        "None": 8,
+        "finish": 1,
+        "read": 20,
+        "search": 74
+      }
+    }
+  }
+}

@@ -49,14 +49,18 @@ def bind_config(path, config):
     else:
         atomic_json(path, config)
 
-def validate_training_batch(records, policy_id, batch_size=8):
+def validate_training_batch(records, policy_id, batch_size=8, allowed_policies=None):
+    """A batch holds `batch_size` distinct verified records. Every record was collected under the
+    current policy or, when a replay window is configured, under one of `allowed_policies`
+    (recent checkpoints). Anything else is stale and rejected."""
+    allowed = {policy_id} | set(allowed_policies or ())
     if len(records) != batch_size:
         raise ValueError(f'Need {batch_size} fresh verified records, got {len(records)}')
     if len({r['task_id'] for r in records}) != batch_size:
         raise ValueError('Duplicate training question')
     for record in records:
-        if record.get('policy_id') != policy_id:
+        if record.get('policy_id') not in allowed:
             raise ValueError('Stale or unidentified repair policy')
-        if record['edited_wins'] < 2 or record['original_wins'] > 1:
+        if record.get('verification', 'replay') == 'replay' and (record['edited_wins'] < 2 or record['original_wins'] > 1):
             raise ValueError('Unverified repair')
 

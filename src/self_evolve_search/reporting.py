@@ -1,10 +1,11 @@
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 def write_report(root, pilot_dir=None):
     root=Path(root).resolve()
-    lines=['# Self-evolution experiment results','',f'Updated: {datetime.now(timezone.utc).isoformat()}', '', '**Scope:** Qwen3.5-9B, local HotpotQA fullwiki search, same-model critical-step repair, and action-only OPSD.', '', f'Repository: `{root}`', '', '## Setup', '', '- Fresh Git repository and separate data, rollout, and training environments created.', '- Official Wikipedia archive downloaded and verified against MD5 `01edf64cd120ecc03a2745352779514c`.', '- Question partitions: 500 pilot, 5,000 round 1, 5,000 round 2, 1,500 internal development, and 500 locked repair questions. Pilot is a subset of round 1.', '- 7,405 fullwiki development questions reserved for final evaluation; final answers/support labels have not been used.', '']
+    lines=['# Self-evolution experiment results','',f'Updated: {datetime.now(timezone.utc).isoformat()}', '', '**Scope:** Qwen3.5-9B, local HotpotQA fullwiki search, same-model critical-step repair, and action-only OPSD.', '', f'Repository: `{root}`', '', '## Setup', '', '- Fresh Git repository and separate data, rollout, and training environments created.', '- Official Wikipedia archive downloaded and verified against MD5 `01edf64cd120ecc03a2745352779514c`.', '- Question partitions: 500 pilot, 5,000 round 1, 5,000 round 2, 1,500 internal development, and 500 locked repair questions. Pilot is a subset of round 1.', '- 7,405 fullwiki development questions reserved for final evaluation; final answers/support labels have not been used.', '- Configured SSH server `konnext-server` was unreachable (connection timeout). No server training has run.', '']
     index=root/'data/index/wiki.manifest.json'
     if index.exists():
         meta=json.loads(index.read_text()); lines += [f"- Full local index: **{meta['documents']:,} documents**, built in {meta['elapsed_seconds']:.1f} seconds."]
@@ -63,9 +64,12 @@ def write_report(root, pilot_dir=None):
             lengths=[x['prefix_tokens'] for x in examples]
             lines += [f"- Compatibility batch used student prefixes of {min(lengths)}–{max(lengths)} tokens. The observed memory result does not establish capacity for 8K training contexts."]
     else: lines += ['The training compatibility check has not run yet; it requires a verified correction and a free GPU.']
-    main=root/'runs/round1-seed42'
+    main=root/os.environ.get('SELF_EVOLVE_RUN','runs/round1-seed42')
     if main.exists():
-        lines += ['', '## Continuous round-1 run', '', 'The implemented runner alternates fresh repair collection and action-only OPSD, restores AdamW state, fingerprints each checkpoint, and resumes saved questions/updates. Limits: 200 updates or 5,000 original questions, including the 500-question pilot.']
+        run_config=json.loads((main/'config.json').read_text()) if (main/'config.json').exists() else {}
+        lines += ['', f"## Continuous run `{main.name}`", '', 'The implemented runner alternates fresh repair collection and action-only OPSD, restores AdamW state, fingerprints each checkpoint, and resumes saved questions/updates.']
+        if run_config:
+            lines += [f"- Limits: {run_config.get('max_updates')} updates or {run_config.get('max_questions'):,} original questions (cursor starts at {run_config.get('start_cursor',500)}). Learning rate {run_config.get('learning_rate')}, loss tokens `{run_config.get('loss_tokens','all')}`, {run_config.get('fresh_records_per_update',run_config.get('batch_size',8))} fresh records per update with replay window {run_config.get('replay_window_updates',0)} (max reuse {run_config.get('max_record_reuse',1)}), evaluation on {run_config.get('evaluation_questions',500)} questions."]
         state_path=main/'state.json'
         if state_path.exists():
             state=json.loads(state_path.read_text())
@@ -74,10 +78,17 @@ def write_report(root, pilot_dir=None):
             if optimizer_check.exists():
                 check=json.loads(optimizer_check.read_text())
                 lines += [f"- Optimizer restoration check: {check['optimizer_parameter_states']} parameter states restored on CPU with matching names, shapes, update counters and finite moments.", '- The first formal update starts a separate chain from the base model. Its adapter is not bit-identical to the earlier compatibility checkpoint; only the formal chain is used for subsequent collection and training.']
-            pending=main/f"batches/step-{state['updates']+1:03}/summary.json"
-            if pending.exists() and state['updates']:
-                batch=json.loads(pending.read_text())
-                lines += [f"- Current fresh batch: {batch['verified']} / 8 verified repairs from {batch['attempted']} questions; next question position: {batch['next_cursor']}."]
+            pending_folder=main/f"batches/step-{state['updates']+1:03}"
+            pending=next((p for p in (pending_folder/'summary.json',pending_folder/'fresh/summary.json') if p.exists()),None)
+            if pending and state['updates']:
+                # The collector rewrites this summary atomically while the report is being generated; on the
+                # Windows-backed mount the rename can make it briefly unreadable (arm C stopped on exactly this
+                # on 24 September). A missing or half-written summary only costs the report one line.
+                try: batch=json.loads(pending.read_text())
+                except (OSError, ValueError): batch=None
+                if batch:
+                    lines += [f"- Current fresh batch: {batch['verified']} verified repairs from {batch['attempted']} questions; next question position: {batch['next_cursor']}."]
+                    if batch.get('replayed'): lines += [f"  Composed training batch: {batch['fresh']} fresh + {batch['replayed']} replayed records (from updates {batch['replayed_from_steps']})."]
             if 'error' in state: lines += [f"- Last recorded stop: `{state['error']}`."]
         for evaluation in sorted((main/'evaluations').glob('step-*/summary.json')):
             score=json.loads(evaluation.read_text())

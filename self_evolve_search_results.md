@@ -1,4 +1,6 @@
-**Self-Evolve Search — experiment and results**
+**Self-Evolve Search — experiment and results (round 1)**
+
+*Superseded: round 2 (26 September 2026) fixed the confounds described in `docs/UPGRADE_PLAN.md` and shows a clear development gain with matched controls; see [`self_evolve_search_round2_results.md`](self_evolve_search_round2_results.md). This document records round 1 as it was.*
 
 Updated 18 September 2026. Round 1 finished on 17 September at 19:09 Singapore time: **5,000 questions, 24 OPSD updates, and 500 development evaluations per checkpoint**. Execution used one local RTX 5090 and training seed 42.
 

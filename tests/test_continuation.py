@@ -4,8 +4,49 @@ from pathlib import Path
 import pytest
 from self_evolve_search.persistence import BASE_POLICY, adapter_policy, atomic_json, bind_config, file_hash, validate_training_batch
 
-def records(policy, prefix='q'):
-    return [{'task_id':prefix+str(i),'policy_id':policy,'original_wins':0,'edited_wins':3} for i in range(8)]
+def records(policy, prefix='q', count=8):
+    return [{'task_id':prefix+str(i),'policy_id':policy,'original_wins':0,'edited_wins':3} for i in range(count)]
+
+def controller_config(**overrides):
+    config={'seed':42,'max_updates':2,'max_questions':5000,'batch_size':8,'fresh_records_per_update':8,'replay_window_updates':0,'max_record_reuse':1,
+            'loss_tokens':'all','learning_rate':5e-6,'evaluation_file':'data/splits/dev_monitor.jsonl','evaluation_questions':500,'evaluation_interval':50,'bootstrap':'pilot',
+            'repair_mode':'verified','step_selection':'ranked','objective':'opsd','dpo_beta':0.1}
+    return config|overrides
+
+def load_controller(tmp_path,monkeypatch):
+    root=Path(__file__).resolve().parents[1]
+    spec=importlib.util.spec_from_file_location('experiment_test',root/'scripts/run_experiment.py')
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    monkeypatch.setattr(module,'RUN',tmp_path)
+    monkeypatch.setattr(module,'relative',lambda path:str(path))
+    return module
+
+def test_replay_window_reuses_recent_records_within_allowance(tmp_path,monkeypatch):
+    module=load_controller(tmp_path,monkeypatch)
+    experiment=module.Experiment.__new__(module.Experiment)
+    experiment.config=controller_config(batch_size=8,fresh_records_per_update=4,replay_window_updates=2,max_record_reuse=2)
+    # completed updates 1..3 with their fresh batches (4 records each) and source policies
+    for step,policy in ((1,'base'),(2,'p1'),(3,'p2')):
+        atomic_json(tmp_path/f'checkpoints/step-{step:03}/status.json',{'complete':True,'source_policy':policy,'step':step})
+        atomic_json(tmp_path/f'batches/step-{step:03}/fresh/records.json',records(policy,f's{step}-',4))
+    atomic_json(tmp_path/'replay-usage.json',{'s3-0':[3,3]})   # exhausted its allowance
+    assert experiment.window_policies(4)=={'p1','p2'}          # steps 2 and 3 only
+    candidates=experiment.replay_candidates(4)
+    assert [c['task_id'] for c in candidates]==['s3-1','s3-2','s3-3','s2-0','s2-1','s2-2','s2-3']   # most recent first, s3-0 excluded, step 1 outside window
+    fresh=records('p3','f',4)
+    composed=experiment.compose_batch(4,tmp_path/'batches/step-004',fresh)
+    assert [r['task_id'] for r in composed]==['f0','f1','f2','f3','s3-1','s3-2','s3-3','s2-0']
+    assert all(r['replayed_from_step'] in (2,3) for r in composed[4:])
+    validate_training_batch(composed,'p3',8,experiment.window_policies(4))
+    with pytest.raises(ValueError,match='Stale'): validate_training_batch(composed,'p3',8)
+    usage=json.loads((tmp_path/'replay-usage.json').read_text())
+    assert usage['f0']==[4] and usage['s2-0']==[4] and usage['s3-0']==[3,3]
+    # composing again returns the bound batch without touching usage
+    assert experiment.compose_batch(4,tmp_path/'batches/step-004',fresh)==composed
+    assert json.loads((tmp_path/'replay-usage.json').read_text())==usage
+    # a record that was itself replayed is never replayed again from the composed file
+    atomic_json(tmp_path/f'checkpoints/step-004/status.json',{'complete':True,'source_policy':'p3','step':4})
+    assert 's2-0' not in {c['task_id'] for c in experiment.replay_candidates(5)}
 
 def test_stale_and_duplicate_training_records_are_rejected():
     batch=records('checkpoint-a')
@@ -25,14 +66,10 @@ def test_checkpoint_identity_and_resume_configuration_detect_changes(tmp_path):
 
 @pytest.mark.parametrize('checkpoint_written_before_restart',[False,True])
 def test_controller_collects_with_updated_weights_and_never_repeats_completed_update(tmp_path,monkeypatch,checkpoint_written_before_restart):
-    root=Path(__file__).resolve().parents[1]
-    spec=importlib.util.spec_from_file_location('experiment_test',root/'scripts/run_experiment.py')
-    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-    monkeypatch.setattr(module,'RUN',tmp_path)
-    monkeypatch.setattr(module,'relative',lambda path:str(path))
+    module=load_controller(tmp_path,monkeypatch)
     experiment=module.Experiment.__new__(module.Experiment)
     experiment.state={'updates':0,'cursor':500,'policy_id':BASE_POLICY,'checkpoint':None,'complete':False}
-    experiment.config={'max_updates':2,'max_questions':5000}
+    experiment.config=controller_config(max_updates=2)
     events=[]
     experiment.status=lambda phase,**fields:experiment.state.update(phase=phase,**fields)
     experiment.evaluate=lambda step=None:events.append(('evaluate',experiment.state['updates'] if step is None else step))
@@ -61,12 +98,14 @@ def test_controller_collects_with_updated_weights_and_never_repeats_completed_up
             batch=Path(option('--records')).parent
             validate_training_batch(json.loads((batch/'records.json').read_text()),option('--source-policy'))
             step=int(option('--step')); events.append(('train',step,option('--source-policy')))
+            assert option('--objective')=='opsd' and option('--loss-tokens')=='all'
             if step==2: assert option('--previous')==str(tmp_path/'checkpoints/step-001')
             checkpoint(step,option('--source-policy'),batch)
         elif name=='collect_batch.py':
-            assert int(option('--start'))==500
+            assert int(option('--start'))==500 and int(option('--batch-size'))==8
+            assert option('--repair-mode')=='verified' and option('--step-selection')=='ranked'
             assert option('--policy-id')==adapter_policy(tmp_path/'checkpoints/step-001/adapter')
-            target=Path(option('--output'))
+            target=Path(option('--output')); assert target.name=='fresh'
             atomic_json(target/'records.json',records(option('--policy-id'),'fresh'))
             atomic_json(target/'summary.json',{'batch_ready':True,'verified':8,'next_cursor':508})
             events.append(('collect',option('--policy-id')))

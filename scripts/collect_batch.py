@@ -17,6 +17,9 @@ def main():
     parser.add_argument('--end', type=int, default=5000)
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--endpoint', default='http://127.0.0.1:8093')
+    parser.add_argument('--repair-mode', choices=('verified', 'unverified', 'evidence-only'), default='verified')
+    parser.add_argument('--step-selection', choices=('ranked', 'random'), default='ranked')
+    parser.add_argument('--seed', type=int, default=42, help='seed for random step selection')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     out = Path(args.output); out.mkdir(parents=True, exist_ok=True)
@@ -37,7 +40,7 @@ def main():
             student = run(row, client, library, 2)
             teacher = run(row, client, library, 8)
             item = {'position': position, 'policy_id': args.policy_id, 'student': student, 'teacher': teacher,
-                    'repair': repair(row, student, teacher, client, library)}
+                    'repair': repair(row, student, teacher, client, library, args.repair_mode, args.step_selection, args.seed)}
             item.update(calls=client.calls[call_start:], tool_calls=library.calls[tool_start:], elapsed_seconds=time.perf_counter()-start)
             atomic_json(path, item)
         if item['position'] != position or item['policy_id'] != args.policy_id: raise ValueError('Stale collection result')
