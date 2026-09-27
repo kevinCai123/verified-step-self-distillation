@@ -209,7 +209,7 @@
       }
     },
     "C": {
-      "description": "DPO objective on the same verified pairs",
+      "description": "DPO objective using the same repair procedure with its own on-policy verified pairs",
       "run": "runs/armC-seed42",
       "updates": 22,
       "cursor": 2500,

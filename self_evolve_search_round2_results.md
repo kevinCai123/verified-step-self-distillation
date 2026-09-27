@@ -2,19 +2,20 @@
 
 Updated 26 September 2026. Round 2 ran unattended from 21 September 21:59 to 25 September 20:37
 Singapore time on the same local RTX 5090 (training seed 42): a memorization gate, then four arms of
-2,500 collection questions each, each evaluated on the same 1,500-question internal-development set.
+2,500 collection questions each for A/D/C (B stopped after 89), with all arms evaluated on the same
+1,500-question internal-development set.
 Round 1 is documented in [`self_evolve_search_results.md`](self_evolve_search_results.md); the diagnosis
 that led to round 2 is in [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md); aggregate numbers are in
 [`results/round2_summary.json`](results/round2_summary.json).
 
 **Finding.** With the round-1 confounds removed, the verified critical-step method improves the
 restricted student by **+8.8 points joint F1 [+7.0, +10.7] and +21.1 points grounded success
-[+18.5, +23.6]** over the original model (round 1: −0.01 [−0.47, +0.44]). Three matched controls each
-remove one ingredient and each loses the gain: random step selection keeps the grounding gain but not
-the answer gain; DPO on the same verified pairs learns little; evidence-only teacher guidance collapses
-the policy into answering without retrieving. The gain therefore comes from the combination of
-diagnosed critical steps, verified corrections, and distribution matching against a correction-guided
-teacher, not from data volume or privileged context alone.
+[+18.5, +23.6]** over the original model. The published round-1 final joint-F1 change was
++0.63 [−0.91, +2.14] on a smaller, 500-question development evaluation. Three controls have lower
+joint F1 than arm A: random step selection retains much of the grounding gain; DPO using the same
+repair procedure gains little; and evidence-only training without diagnosis or verification collapses
+into answering without retrieving. These results support the combined method in this seed, but
+differing on-policy records and update counts prevent attributing the gap solely to one ingredient.
 
 **What changed since round 1.** The recipe is the same — same model in all roles, same top-2/top-8
 permissions, same diagnose → propose → replay → verify loop, same action-token JSD objective, LoRA
@@ -44,8 +45,10 @@ greedy actions on the same prefixes; a run may start only if actions move toward
 | verified correction only | 2e-5 | 44.8% | 24.5% | passes; action mix stable |
 | verified correction only, 103 legal records | 2e-5 | 53.4% | 19.4% | passes |
 
-**Arms.** All share model, data, question order, budget, learning rate, and evaluation; each control
-changes exactly one ingredient of arm A.
+**Arms.** All share the base model, collection question pool and order, per-trajectory tool budget,
+learning rate, and evaluation set. D changes step selection and C changes the objective; their
+on-policy records and update counts differ. B jointly removes diagnosis and verification and switches
+to evidence guidance, with an early stop; it is not a one-factor ablation.
 
 | Arm | Step selection | Verification | Teacher guidance | Objective | Question |
 | --- | --- | --- | --- | --- | --- |
@@ -59,12 +62,15 @@ percentage points with paired 95% intervals. Base model: answer EM 51.33, answer
 supporting-fact F1 49.77, joint F1 36.13, grounded success 24.47; 166 questions exhausted the tool
 budget.
 
-| Arm | Updates | Verified records | Answer EM | Answer F1 | Supporting-fact F1 | Joint F1 | Grounded success | Budget exhausted |
+| Arm | Updates | Collected records / questions | Answer EM | Answer F1 | Supporting-fact F1 | Joint F1 | Grounded success | Budget exhausted |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | **A. verified critical step** | 32 | 70 / 2,500 | **58.87 (+7.53 [+5.13, +10.07])** | **65.42 (+5.29 [+2.91, +7.70])** | 51.45 (+1.68 [−0.13, +3.34]) | **44.94 (+8.81 [+6.95, +10.72])** | **45.53 (+21.07 [+18.47, +23.60])** | 316 |
 | D. random step | 23 | 53 / 2,500 | 54.87 (+3.53 [+0.80, +6.27]) | 60.13 (−0.00 [−2.67, +2.63]) | 43.28 (−6.49 [−8.51, −4.50]) | 37.76 (+1.64 [−0.44, +3.71]) | 44.27 (+19.80 [+17.00, +22.67]) | 396 |
 | C. DPO | 22 | 50 / 2,500 | 52.67 (+1.33 [−0.67, +3.33]) | 61.12 (+0.99 [−0.92, +2.94]) | 50.00 (+0.23 [−1.38, +1.80]) | 36.93 (+0.81 [−0.62, +2.30]) | 33.53 (+9.07 [+6.73, +11.27]) | 46 |
 | B. evidence only | 20 (tripwire) | 46 / 89 | 12.40 (−38.93 [−41.60, −36.13]) | 21.12 (−39.01) | 25.17 (−24.60) | 7.06 (−29.06 [−30.90, −27.29]) | 0.00 (−24.47) | 0 |
+
+Records in A/D/C are verified; B's 46 records are unverified. The aggregate JSON retains the
+collector's legacy `fresh_yield.verified` key for B; it counts collected records, not passed verification.
 
 Paired contrasts between arms on the same questions (arm A minus the other arm):
 
@@ -81,19 +87,20 @@ Paired contrasts between arms on the same questions (arm A minus the other arm):
   not what to search for or cite: supporting-fact F1 falls 6.5 points below base and joint F1 stays
   within noise of base. Random-step training also exhausts the tool budget most often (396 questions):
   the policy searches more without searching better.
-- *The objective matters (C).* DPO on identical pairs learned the preferences early (margin 2.6,
+- *DPO control (C).* DPO on its own on-policy verified pairs learned the preferences early (margin 2.6,
   reward accuracy 1.0 at update 5) and then oscillated around zero margin from update 14 on. Its final
   policy is the most conservative (46 budget exhaustions) and gains only in grounding. Matching the
-  guided teacher's full next-token distribution is a stronger signal than a pairwise preference on one
-  sampled action.
-- *Evidence-only guidance is harmful (B).* A teacher that sees the answer's evidence prefers to finish;
+  guided teacher's full next-token distribution performed better in this run; unequal realized data
+  and update counts limit an objective-only interpretation.
+- *The evidence-only control collapses (B).* A teacher that sees the answer's evidence prefers to finish;
   the student copies it. Premature-finish share in the serving check rose 25% (update 1) → 75%
   (update 19) → 100% (update 20), where the tripwire stopped the run. Evaluated at that checkpoint
   (`scripts/evaluate_checkpoint.sh`), every one of the 1,500 development trajectories is a single
-  `finish` with no retrieval. Round 1 used this guidance at 5e-6 and did not collapse only because most
-  of its gradient went into whitespace.
+  `finish` with no retrieval. B also removes diagnosis and verification, so this comparison cannot
+  isolate the effect of evidence guidance. The round-1 whitespace diagnosis suggests one possible
+  reason its lower-rate run did not show the same collapse.
 - *The signal is small but sufficient.* Verified repairs are 2.8% of attempted questions in arm A
-  (70 records, about 560 record-uses with replay). A few hundred well-chosen action distributions move
+  (70 records, 256 record-uses with replay, confirmed by `replay-usage.json`). A few hundred action distributions move
   the policy by 8.8 points — and a formatting confound could swamp that in round 1.
 - *Where the headroom is.* Arm A exhausts the tool budget on 316 questions (base 166); part of its
   remaining failures are budget rather than judgement. Malformed-citation failures fell from 12 to 0.

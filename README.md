@@ -17,17 +17,17 @@ This adapts CSO-style verified step repair to same-model self-distillation. It i
 
 **Round-2 result (21–25 September 2026)**
 
-Round 1 measured no gain. Its diagnosis (`docs/UPGRADE_PLAN.md`) found the guidance JSON in a dialect the model never emits (the gradient taught whitespace), corrections that named entities the student could not see, a teacher that preferred to finish when shown the evidence, and a BM25 top-2 retrieval ceiling. Round 2 fixed those, gated the learning rate on a memorization check, and ran the same method with three matched controls on one RTX 5090 — 2,500 collection questions per arm, evaluated on 1,500 held-out development questions, paired against the original model.
+Round 1 measured no clear gain. Its diagnosis (`docs/UPGRADE_PLAN.md`) found the guidance JSON in a dialect the model rarely emits (the gradient taught whitespace), corrections that named entities the student could not see, a teacher that preferred to finish when shown the evidence, and a BM25 top-2 retrieval ceiling. Round 2 addressed those, gated the learning rate on a memorization check, and ran the method with three controls on one RTX 5090. Arms A/D/C each completed 2,500 collection questions; B stopped after 89. All were evaluated on the same 1,500 development questions, paired against the original model. The development set was also used for tuning; the locked final benchmark is pending.
 
 | Arm | Updates | Answer EM | Joint F1 | Grounded success |
 | --- | ---: | ---: | ---: | ---: |
 | Original model | — | 51.33% | 36.13% | 24.47% |
 | **A. verified critical-step OPSD (the method)** | 32 | **58.87% (+7.53 [+5.13, +10.07])** | **44.94% (+8.81 [+6.95, +10.72])** | **45.53% (+21.07 [+18.47, +23.60])** |
 | D. same, random step instead of diagnosed | 23 | 54.87% (+3.53) | 37.76% (+1.64 [−0.44, +3.71]) | 44.27% (+19.80) |
-| C. same data, DPO instead of OPSD | 22 | 52.67% (+1.33) | 36.93% (+0.81 [−0.62, +2.30]) | 33.53% (+9.07) |
+| C. same repair procedure, DPO instead of OPSD | 22 | 52.67% (+1.33) | 36.93% (+0.81 [−0.62, +2.30]) | 33.53% (+9.07) |
 | B. plain privileged-context OPSD (evidence-only guidance) | 20, stopped by tripwire | 12.40% (−38.93) | 7.06% (−29.06) | 0.00% (−24.47) |
 
-**The method now shows a clear development gain, and each control loses it.** Diagnosed step selection carries the answer and citation gain (A − D: +7.2 joint F1 [+5.7, +8.6]); the distribution-matching objective carries it over pairwise preference (A − C: +8.0 [+6.2, +9.7]); and showing the teacher the evidence instead of a verified correction collapses the policy into answering without retrieving. Single seed per arm; the locked final benchmark is still pending. See the round-2 report for the gate, all metrics, contrasts, and limitations.
+**Arm A shows a clear development gain in this seed.** It exceeds random-step training (A − D: +7.2 joint F1 [+5.7, +8.6]) and DPO (A − C: +8.0 [+6.2, +9.7]). The evidence-only control collapses into answering without retrieving, but also removes diagnosis and verification, so it does not isolate guidance alone. On-policy records and update counts differ across arms. Single seed per arm; the locked final benchmark is still pending. See the round-2 report for the gate, all metrics, contrasts, and limitations.
 
 **Round-1 result**
 
@@ -39,7 +39,7 @@ Completed on one local RTX 5090: 5,000 collection questions, 198 verified repair
 | Joint F1 | 37.44% | 38.08% |
 | Grounded success | 27.60% | 26.60% |
 
-**No clear learning improvement is established.** The joint-F1 change is +0.63 percentage points with a paired 95% interval of [-0.91, +2.14]. The 7,405-question final benchmark, fixed repair benchmark, controls, additional training seeds, and round 2 remain pending. See the results report for all metrics and limitations.
+**Round 1 established no clear learning improvement.** Its joint-F1 change is +0.63 percentage points with a paired 95% interval of [-0.91, +2.14]. Round 2 and its controls are reported above. The 7,405-question final benchmark, fixed repair benchmark, and additional training seeds remain pending. See the round-1 results report for all historical metrics and limitations.
 
 **Setup**
 
