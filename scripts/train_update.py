@@ -45,8 +45,8 @@ def main():
                         help='content: average the JSD over value tokens of the action only; all: every action token (round-1 behaviour)')
     parser.add_argument('--allowed-policies', default='',
                         help='comma-separated policy IDs, besides --source-policy, whose records this batch may contain (replay window)')
-    parser.add_argument('--objective', choices=('opsd', 'dpo'), default='opsd',
-                        help='opsd: action-token JSD against the guidance-primed teacher on a fresh student sample; dpo: preference loss, replacement over original action, reference = base model (adapter disabled)')
+    parser.add_argument('--objective', choices=('opsd', 'dpo', 'sft'), default='opsd',
+                        help='opsd: action-token JSD against the guidance-primed teacher on a fresh student sample; dpo: preference loss, replacement over original action, reference = base model (adapter disabled); sft: cross-entropy on the replacement action tokens (no teacher pass, no sampling)')
     parser.add_argument('--dpo-beta', type=float, default=0.1)
     args = parser.parse_args()
     out = Path(args.output); out.mkdir(parents=True, exist_ok=True)
@@ -83,6 +83,10 @@ def main():
                 if record.get('replacement') is None or record.get('original_action') is None: raise ValueError('DPO needs a replacement and an original action')
                 pair = (action_ids(tokenizer, record['replacement']), action_ids(tokenizer, record['original_action']))
                 if len(student_ids)+max(map(len, pair)) > 8192: raise ValueError('Training context exceeded')
+            elif args.objective == 'sft':
+                if record.get('replacement') is None: raise ValueError('SFT needs a replacement action')
+                pair = (action_ids(tokenizer, record['replacement']),)
+                if len(student_ids)+len(pair[0]) > 8192: raise ValueError('Training context exceeded')
             prepared.append((record, student_ids, teacher_ids, budget, pair))
         torch.manual_seed(args.seed + 1009*(args.step-1))
         status['stage'] = 'loading model'; atomic_json(out/'status.json', status)
@@ -138,6 +142,27 @@ def main():
                 del loss, policy_chosen, policy_rejected, margin
                 gc.collect(); torch.cuda.empty_cache()
                 continue
+            if args.objective == 'sft':
+                target = pair[0]
+                content = content_token_mask(tokenizer, target)
+                weights = torch.tensor([float(flag) for flag in content], device='cuda') if args.loss_tokens == 'content' and any(content) else torch.ones(len(target), device='cuda')
+                ids, positions = action_inputs(student_prefix, target, 'cuda')
+                model.train()
+                logits = model(input_ids=ids, attention_mask=torch.ones_like(ids), use_cache=False, logits_to_keep=positions).logits
+                token_logp = torch.log_softmax(logits.float(), -1)[0].gather(-1, torch.tensor(target, device='cuda')[:, None]).squeeze(-1)
+                loss = -(token_logp*weights).sum()/weights.sum()
+                if not torch.isfinite(loss): raise ValueError('Non-finite loss')
+                (loss/len(records)).backward()
+                nll = (-token_logp).detach().tolist()
+                sample = {'task_id': record['task_id'], 'prefix_tokens': len(student_prefix), 'target_tokens': len(target),
+                          'target': compact(record['replacement']), 'replacement_type': (record.get('replacement') or {}).get('action'),
+                          'loss': loss.item(), 'nll_all': sum(nll)/len(nll),
+                          'nll_content': (sum(v for v, f in zip(nll, content) if f)/sum(content)) if any(content) else None,
+                          'content_tokens': sum(content), 'structural_tokens': len(content)-sum(content)}
+                samples.append(sample); atomic_json(out/'samples.json', samples); print(json.dumps(sample), flush=True)
+                del loss, logits, token_logp, ids
+                gc.collect(); torch.cuda.empty_cache()
+                continue
             model.eval()
             with torch.no_grad():
                 prompt = torch.tensor([student_prefix], device='cuda', dtype=torch.long)
@@ -188,6 +213,10 @@ def main():
                       mean_loss=sum(s['loss'] for s in samples)/len(samples), peak_cuda_allocated_gib=torch.cuda.max_memory_allocated()/2**30)
         if args.objective == 'dpo':
             status.update(mean_margin=mean('margin'), reward_accuracy=sum(s['margin'] > 0 for s in samples)/len(samples))
+        elif args.objective == 'sft':
+            types = [s.get('replacement_type') for s in samples]
+            status['replacement_types'] = {str(t): types.count(t) for t in sorted(set(types), key=str)}
+            status.update(mean_nll_all=mean('nll_all'), mean_nll_content=mean('nll_content'))
         else:
             types = [s.get('student_action_type') for s in samples]
             status['sample_action_types'] = {str(t): types.count(t) for t in sorted(set(types), key=str)}

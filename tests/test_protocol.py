@@ -128,6 +128,13 @@ def test_premature_finish_tripwire_counts_only_states_where_finishing_is_wrong()
     assert premature_finish_share(rows,outputs)==0.5
     assert premature_finish_share(rows,['{"action":"search","query":"q"}']*3)==0.
 
+def test_illegal_read_tripwire_counts_reads_of_unretrieved_documents():
+    from self_evolve_search.opsd import illegal_read_share
+    rows=[{'student_state':{'retrieved':['12','34']}},{'student_state':{'retrieved':['12']}},{'student_state':{'retrieved':[]}},{'student_state':{'retrieved':['7']}}]
+    outputs=['{"action":"read","doc_id":"12"}','{"action":"read","doc_id":"doc_1"}','{"action":"read","doc_id":"doc_1"}','{"action":"search","query":"q"}']
+    assert illegal_read_share(rows,outputs)==0.5          # two fabricated reads out of four probed states
+    assert illegal_read_share(rows,['not json']*4)==0. and illegal_read_share([],[])==0.
+
 def _corpus(path, docs):
     import sqlite3
     db=sqlite3.connect(path)
@@ -229,3 +236,30 @@ def test_malformed_diagnosis_entries_are_skipped_not_fatal():
     for reply in ('["not an object"]','"just text"','{"steps":"none"}'):
         evidence=repair(row,student,teacher,ScriptedClient([reply]),SnippetLibrary(),mode='unverified')
         assert evidence['diagnosis_error'] is None and evidence['confirmed'] is None and evidence['attempts']==[]
+
+def _load_collect_batch():
+    """scripts/collect_batch.py imports transformers for the real tokenizer; the self-success control needs neither."""
+    import importlib.util, sys, types
+    if 'transformers' not in sys.modules:
+        try: import transformers  # noqa: F401
+        except ImportError: sys.modules['transformers']=types.SimpleNamespace(AutoTokenizer=None)
+    root=Path(__file__).resolve().parents[1]
+    spec=importlib.util.spec_from_file_location('collect_batch_test',root/'scripts/collect_batch.py')
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+def test_self_success_control_records_the_students_own_successful_step_without_a_teacher():
+    from self_evolve_search.persistence import validate_training_batch
+    collect=_load_collect_batch()
+    row={'id':'ok1','question':'Erna Siikavirta was a member of the Finnish band formed in what year?','answer':'1992','supporting_facts':{'title':['Doc 1'],'sent_id':[0]}}
+    success=run(row,ScriptedClient(['{"action":"search","query":"Erna Siikavirta"}','{"action":"read","doc_id":"1"}','{"action":"finish","answer":"1992","citations":[["Doc 1",0]]}']),SnippetLibrary(),2)
+    assert success['metrics']['grounded_success']
+    evidence=collect.self_success(row,success,ScriptedClient([]),42)
+    record=evidence['confirmed']
+    assert evidence['mode']=='self-success' and record is not None and record['verification']=='none' and record['repair_mode']=='self-success'
+    assert record['replacement']==success['trace'][record['step']]['action']==record['original_action']
+    assert record['guidance'].startswith('Verified correction for this decision: ') and 'Retrieved evidence' not in record['guidance']
+    assert collect.self_success(row,success,ScriptedClient([]),42)['confirmed']['step']==record['step']     # seeded: replayable
+    validate_training_batch([dict(record,task_id=str(i)) for i in range(8)],'base:test')
+    failed=run(row,ScriptedClient(['{"action":"finish","answer":"1990","citations":[]}']),SnippetLibrary(),2)
+    assert not failed['metrics']['grounded_success'] and collect.self_success(row,failed,ScriptedClient([]),42)['confirmed'] is None   # failures yield nothing

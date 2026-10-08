@@ -35,6 +35,22 @@ def premature_finish_share(rows, outputs):
     if not eligible: return 0.
     return sum(action_type(out)=='finish' for _,out in eligible)/len(eligible)
 
+def illegal_read_share(rows, outputs):
+    """Share of probed training states on which a policy answers with a `read` of a document id that the
+    student had not retrieved at that state (the agent would raise PermissionError). The second drift
+    tripwire of scripts/check_adapter_serving.py, added after cycle 2: arm D seed 7 collapsed from update 25
+    into reading a fabricated `doc_1` on every question, which the premature-finish share does not see."""
+    import json
+    if not rows: return 0.
+    illegal=0
+    for row,out in zip(rows,outputs):
+        try: action=json.loads(out)
+        except (TypeError, ValueError): continue
+        if not isinstance(action,dict) or action.get('action')!='read': continue
+        retrieved=[str(x) for x in (row.get('student_state') or {}).get('retrieved') or []]
+        if str(action.get('doc_id')) not in retrieved: illegal+=1
+    return illegal/len(rows)
+
 def teacher_messages(student_messages,guidance):
     messages=copy.deepcopy(student_messages)
     correction=guidance.startswith('Verified correction'); evidence='Retrieved evidence:' in guidance

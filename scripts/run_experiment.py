@@ -10,8 +10,10 @@ Configuration keys read from the experiment file (all optional except the round-
   train_learning_rate, effective_batch_size, fresh_records_per_update, replay_window_updates,
   max_record_reuse, loss_tokens, evaluation_file, evaluation_questions, evaluation_interval,
   bootstrap ('pilot' or 'none'), start_cursor, max_updates, max_questions,
-  repair_mode ('verified' | 'unverified' | 'evidence-only'), step_selection ('ranked' | 'random'),
-  objective ('opsd' | 'dpo'), dpo_beta.
+  repair_mode ('verified' | 'unverified' | 'evidence-only' | 'self-success'), step_selection ('ranked' | 'random'),
+  objective ('opsd' | 'dpo' | 'sft'), dpo_beta.
+A run directory may be pre-seeded with a state.json, checkpoints/step-NNN and evaluations from another run
+to continue training from that checkpoint (see scripts/run_cycle2.sh, arm A continued).
 """
 import fcntl
 import json

@@ -1,4 +1,4 @@
-"""Collect at most eight replay-verified steps under one immutable checkpoint."""
+"""Collect at most eight training records (replay-verified steps, or control-arm records) under one immutable checkpoint."""
 import argparse
 import json
 import time
@@ -6,8 +6,25 @@ from pathlib import Path
 from transformers import AutoTokenizer
 from self_evolve_search.agent import Client, offline_guard, run
 from self_evolve_search.persistence import atomic_json, bind_config, file_hash, protocol_hash
-from self_evolve_search.repair import repair
+from self_evolve_search.repair import random_steps, record, repair
 from self_evolve_search.retrieval import Library
+
+def self_success(row, student, client, seed):
+    """Control (arm R, rejection-sampling self-training): a grounded-successful student trajectory yields one
+    record whose target is the student's own action at a seeded random step. No teacher trajectory, no
+    diagnosis, no replay; failed trajectories yield nothing. Same record layout as a verified repair so the
+    batch, replay-window and training code are unchanged (guidance carries the target action itself)."""
+    evidence = {'task_id': row['id'], 'attempts': [], 'confirmed': None, 'diagnosis_error': None,
+                'ambiguous_answer_excluded': False, 'mode': 'self-success', 'step_selection': 'random'}
+    if not student['metrics']['grounded_success']: return evidence
+    if student['metrics']['answer_alias_ambiguous']:
+        evidence['ambiguous_answer_excluded'] = True; return evidence
+    chosen = random_steps(student, seed, 1)
+    if not chosen: return evidence
+    step = student['trace'][chosen[0]]
+    evidence['confirmed'] = record(row, student, None, client, chosen[0], None, step['action'],
+                                   "self-success: the student's own action at a seeded random step of a grounded-successful trajectory", 'self-success')
+    return evidence
 
 def main():
     parser = argparse.ArgumentParser()
@@ -17,7 +34,8 @@ def main():
     parser.add_argument('--end', type=int, default=5000)
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--endpoint', default='http://127.0.0.1:8093')
-    parser.add_argument('--repair-mode', choices=('verified', 'unverified', 'evidence-only'), default='verified')
+    parser.add_argument('--repair-mode', choices=('verified', 'unverified', 'evidence-only', 'self-success'), default='verified',
+                        help='self-success: rejection-sampling self-training control (arm R); no teacher run, no diagnosis, no replay')
     parser.add_argument('--step-selection', choices=('ranked', 'random'), default='ranked')
     parser.add_argument('--seed', type=int, default=42, help='seed for random step selection')
     args = parser.parse_args()
@@ -38,9 +56,13 @@ def main():
         else:
             start = time.perf_counter(); call_start = len(client.calls); tool_start = len(library.calls)
             student = run(row, client, library, 2)
-            teacher = run(row, client, library, 8)
-            item = {'position': position, 'policy_id': args.policy_id, 'student': student, 'teacher': teacher,
-                    'repair': repair(row, student, teacher, client, library, args.repair_mode, args.step_selection, args.seed)}
+            if args.repair_mode == 'self-success':
+                item = {'position': position, 'policy_id': args.policy_id, 'student': student, 'teacher': None,
+                        'repair': self_success(row, student, client, args.seed)}
+            else:
+                teacher = run(row, client, library, 8)
+                item = {'position': position, 'policy_id': args.policy_id, 'student': student, 'teacher': teacher,
+                        'repair': repair(row, student, teacher, client, library, args.repair_mode, args.step_selection, args.seed)}
             item.update(calls=client.calls[call_start:], tool_calls=library.calls[tool_start:], elapsed_seconds=time.perf_counter()-start)
             atomic_json(path, item)
         if item['position'] != position or item['policy_id'] != args.policy_id: raise ValueError('Stale collection result')

@@ -4,6 +4,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 def write_report(root, pilot_dir=None):
+    """Regenerate RESULTS.md. The driver calls this every few seconds while collectors and evaluators are
+    rewriting their summaries atomically; on the Windows-backed mount a rename can make a file briefly
+    unreadable (arm C, 24 September; arm B′, 3 October). A report is never worth stopping a run for,
+    so any transient read error skips this refresh instead of propagating."""
+    try: _write_report(root, pilot_dir)
+    except (OSError, ValueError): pass
+
+def _write_report(root, pilot_dir=None):
     root=Path(root).resolve()
     lines=['# Self-evolution experiment results','',f'Updated: {datetime.now(timezone.utc).isoformat()}', '', '**Scope:** Qwen3.5-9B, local HotpotQA fullwiki search, same-model critical-step repair, and action-only OPSD.', '', f'Repository: `{root}`', '', '## Setup', '', '- Fresh Git repository and separate data, rollout, and training environments created.', '- Official Wikipedia archive downloaded and verified against MD5 `01edf64cd120ecc03a2745352779514c`.', '- Question partitions: 500 pilot, 5,000 round 1, 5,000 round 2, 1,500 internal development, and 500 locked repair questions. Pilot is a subset of round 1.', '- 7,405 fullwiki development questions reserved for final evaluation; final answers/support labels have not been used.', '- Configured SSH server `konnext-server` was unreachable (connection timeout). No server training has run.', '']
     index=root/'data/index/wiki.manifest.json'

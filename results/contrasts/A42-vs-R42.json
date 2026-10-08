@@ -1,0 +1,61 @@
+{
+  "questions": 1500,
+  "baseline": "runs/armR-seed42/evaluations/step-032",
+  "updated": "runs/round1b-seed42/evaluations/step-032",
+  "baseline_policy": "adapter:fbca82b2c0a35fe62b9432a8aa0da9372e8213d02639e633cf64281575c59207",
+  "updated_policy": "adapter:52a0ec4541309a2cf8565940b39e9c662e8a3ed7c28bade74ce77835da25b2b7",
+  "protocol_sha256": [
+    "2ed90278ea67a101e367552aa61d28554cb87588bfcaa08240311b58352b2e22",
+    "bfc958a857f13fef86e7852cbe3245566db1fcc9c1bfde61715c2e55a47cab79"
+  ],
+  "bootstrap_samples": 2000,
+  "bootstrap_seed": 42,
+  "scope": "internal development, arm-vs-arm paired contrast",
+  "metrics": {
+    "answer_em": {
+      "baseline": 0.454,
+      "updated": 0.5886666666666667,
+      "delta": 0.13466666666666666,
+      "paired_ci95": [
+        0.10933333333333334,
+        0.16
+      ]
+    },
+    "answer_f1": {
+      "baseline": 0.5208164518824226,
+      "updated": 0.6542463068259533,
+      "delta": 0.1334298549435307,
+      "paired_ci95": [
+        0.10912369006750525,
+        0.1582838773292158
+      ]
+    },
+    "support_f1": {
+      "baseline": 0.4183835978835979,
+      "updated": 0.5145285714285714,
+      "delta": 0.09614497354497353,
+      "paired_ci95": [
+        0.0778291005291006,
+        0.11491428571428547
+      ]
+    },
+    "joint_f1": {
+      "baseline": 0.32847467273323244,
+      "updated": 0.4493702316812415,
+      "delta": 0.12089555894800887,
+      "paired_ci95": [
+        0.10256283678133588,
+        0.1410036595305918
+      ]
+    },
+    "grounded_success": {
+      "baseline": 0.34,
+      "updated": 0.4553333333333333,
+      "delta": 0.11533333333333333,
+      "paired_ci95": [
+        0.088,
+        0.14133333333333334
+      ]
+    }
+  }
+}

@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 from urllib.request import Request, urlopen
-from self_evolve_search.opsd import premature_finish_share
+from self_evolve_search.opsd import illegal_read_share, premature_finish_share
 from self_evolve_search.persistence import atomic_json
 
 parser=argparse.ArgumentParser()
@@ -33,7 +33,11 @@ for row in rows:
 if not any(c['changed_output_or_probabilities'] for c in checks): raise RuntimeError('No adapter effect detected; do not start updated-model collection')
 share = premature_finish_share(rows, [c['adapter']['choices'][0]['message']['content'] for c in checks])
 base_share = premature_finish_share(rows, [c['base']['choices'][0]['message']['content'] for c in checks])
-report = json.loads(Path(args.output).read_text()); report.update(premature_finish_share=share, base_premature_finish_share=base_share); atomic_json(args.output, report)
-print(json.dumps({'premature_finish_share': share, 'base_premature_finish_share': base_share}), flush=True)
+illegal = illegal_read_share(rows, [c['adapter']['choices'][0]['message']['content'] for c in checks])
+base_illegal = illegal_read_share(rows, [c['base']['choices'][0]['message']['content'] for c in checks])
+report = json.loads(Path(args.output).read_text()); report.update(premature_finish_share=share, base_premature_finish_share=base_share, illegal_read_share=illegal, base_illegal_read_share=base_illegal); atomic_json(args.output, report)
+print(json.dumps({'premature_finish_share': share, 'base_premature_finish_share': base_share, 'illegal_read_share': illegal, 'base_illegal_read_share': base_illegal}), flush=True)
 if share >= .75 and share > base_share + .5:
     raise RuntimeError(f'Adapter drifted to premature finishing on {share:.0%} of probed training states (base {base_share:.0%}); stopping before collection')
+if illegal >= .75 and illegal > base_illegal + .5:   # added after cycle 2 (arm D seed 7 collapse); not active in any reported run
+    raise RuntimeError(f'Adapter drifted to reading unretrieved document ids on {illegal:.0%} of probed training states (base {base_illegal:.0%}); stopping before collection')

@@ -241,6 +241,49 @@ race on the Windows mount, and a user pause), and every arm resumed from its sav
 lost updates; `scripts/launch_cycle.cmd` (Windows) with the `runs/cycle/KILL` and `runs/cycle/PAUSE`
 flags is the supported way to stop and resume.
 
+## Cycle 2 — making the result defensible (28 September – 8 October)
+
+`scripts/run_cycle2.sh` (Windows launcher `scripts/launch_cycle2.cmd`; flags `runs/cycle2/KILL`,
+`runs/cycle/PAUSE`) runs, in priority order and with the same resume points as cycle 1:
+
+| Step | Run | Config | Purpose |
+| --- | --- | --- | --- |
+| locked final benchmark | `runs/final-eval/base`, `runs/final-eval/round1b-seed42-step-032` | `scripts/evaluate_policy.sh`, `data/splits/final_eval.jsonl` (7,405 official dev questions, `scripts/make_final_split.py`) | the test number for arm A's update-32 adapter, opened once |
+| arm S | `runs/armS-seed42` | `config/armS-sft.json` | cross-entropy on arm A's verified corrections: objective ablation without DPO's tuning question |
+| arm A, seeds 7 and 123 | `runs/round1b-seed7`, `runs/round1b-seed123` | `config/round1b-seed{7,123}.json` | seed variance of the method (three seeds with 42) |
+| arm D, seeds 7 and 123 | `runs/armD-seed7`, `runs/armD-seed123` | `config/armD-seed{7,123}.json` | seed variance of the random-step control |
+| arm R | `runs/armR-seed42` | `config/armR-self-success.json` | rejection-sampling self-training (STaR/RFT-style): one self-imitated step per grounded-successful trajectory, no teacher, SFT; 32 updates |
+| arm B′ | `runs/armBfair-seed42` | `config/armB-fair.json` | evidence-only OPSD at 5e-6, 32 updates: the control at a rate where it need not collapse |
+| arm A continued | `runs/round1b-seed42-cont` | `config/round1b-cont.json` | update 32 → questions 2,500–5,000, evaluation every 16 updates: scaling / multi-round curve |
+| final benchmark, seeds | `runs/final-eval/round1b-seed{7,123}-step-*` | | test numbers for the other two seeds' final checkpoints |
+
+New code: `--repair-mode self-success` in `scripts/collect_batch.py` (no teacher trajectory is run),
+`--objective sft` in `scripts/train_update.py` (content-token cross-entropy on the replacement action),
+both covered by tests. Base-model development evaluations are deterministic (four identical copies in
+cycle 1), so new runs receive a copy of `runs/round1b-seed42/evaluations/step-000` with a provenance
+note rather than a two-hour re-run; the final benchmark evaluates the base model afresh. Expected
+duration on the RTX 5090: roughly eight days of continuous GPU time.
+
+All steps completed on 8 October (ten days of GPU time including one reboot). Results, in brief —
+the full tables are in `results/cycle2_results.md` and the write-up in `ROUND2_SUMMARY.md`:
+
+| Question | Answer |
+| --- | --- |
+| Does the gain survive more seeds? | Yes: dev joint F1 +8.8 / +6.2 / +6.3 (seeds 42 / 7 / 123), no collapse, premature-finish share 0 throughout. |
+| Does it transfer to the locked test set? | Yes: +8.30 [+7.41, +9.11], +6.28 [+5.32, +7.21], +4.90 [+4.12, +5.64] joint F1; grounded +16.0 / +16.8 / +12.0. The size depends on the seed. |
+| Is it the records or the objective? | The objective: SFT on the identical verified corrections +2.5 (A − S = +6.3 [+4.3, +8.4]); DPO +0.8; the full-vocabulary match against the corrected teacher is what moves the policy. |
+| Is it the teacher or just training on successes? | The teacher: rejection-sampling self-training without one is −3.3 (A − R = +12.1). |
+| Is it the privileged context or the correction? | The correction: evidence-only guidance at a stable 5e-6 is −1.3 with no collapse (A − B′ = +10.1 [+8.3, +11.9]). |
+| Does the critical step matter? | For reliability, not size: random-step seeds give +1.6 / −34 (collapsed into fabricated `doc_1` reads) / +8.3 (as good as the best A seed). A beats D in two seeds of three (+7.2, +40.7) and loses in one (−2.0 [−3.6, −0.3]). |
+| Does more data help? | No: continued to 5,000 questions, update 65 vs update 32 is −1.2 joint F1 [−2.6, +0.3] with a transient grounding dip at update 48. |
+
+Analyses still to write, none needing the GPU: the decomposition of arm A's gain into citation validity,
+documents read and answer correctness; the budget-exhaustion comparison (trained policies fail the
+tool budget two to three times as often as base on the test set); and the behavioural probe on the
+locked repair benchmark. Added after the cycle: an illegal-read tripwire in
+`scripts/check_adapter_serving.py` (not active in any reported run) so a random-step-style collapse
+into non-existent document ids stops a run the way premature finishing does.
+
 ## Phase 3 — scale the winner
 
 Only the arm whose effect exceeds its interval proceeds to the 200-update budget and to round 2 with

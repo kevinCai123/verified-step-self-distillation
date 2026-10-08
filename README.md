@@ -2,7 +2,7 @@
 
 A Qwen3.5-9B experiment that learns from its own failed local-search trajectories using the same model with broader retrieval access.
 
-**[Round-2 results](self_evolve_search_round2_results.md)** · [Round-1 results](self_evolve_search_results.md) · [Aggregate metrics: round 2](results/round2_summary.json), [round 1](results/round1_summary.json) · [Protocol](docs/EXPERIMENT_PLAN.md) · [Round-1 diagnosis and upgrade plan](docs/UPGRADE_PLAN.md)
+**[Cycle-2 results: seeds, baselines, test set](self_evolve_search_cycle2_results.md)** · [Round-2 results](self_evolve_search_round2_results.md) · [Round-1 results](self_evolve_search_results.md) · [Aggregate metrics: cycle 2](results/cycle2_results.json), [round 2](results/round2_summary.json), [round 1](results/round1_summary.json) · [Protocol](docs/EXPERIMENT_PLAN.md) · [Round-1 diagnosis and upgrade plan](docs/UPGRADE_PLAN.md)
 
 The core loop is:
 
@@ -15,9 +15,22 @@ The student searches up to two documents per query; the teacher/critic searches 
 
 This adapts CSO-style verified step repair to same-model self-distillation. It is an experimental adaptation of OPSD, not a reproduction of the complete CSO or TrajDebug benchmarks. HotpotQA answer/support annotations provide verification signals; the teacher does not receive those labels directly.
 
+**Cycle-2 result (28 September – 8 October 2026): the gain reproduces and transfers**
+
+Cycle 2 re-ran the method with two more training seeds, ran the random-step control with the same three seeds, added three same-data baselines, continued the seed-42 run to twice the data, and opened the locked final benchmark (the 7,405 official HotpotQA dev questions, once per policy). Paired against the original model on that test set:
+
+| Policy | Answer EM | Joint F1 | Grounded success | Budget failures |
+| --- | ---: | ---: | ---: | ---: |
+| Original model | 38.56% | 30.27% | 21.51% | 993 |
+| **A. seed 42, update 32** | **45.82% (+7.27 [+6.23, +8.37])** | **38.56% (+8.30 [+7.41, +9.11])** | **37.49% (+15.98)** | 1,655 |
+| A. seed 7, update 43 | 42.69% (+4.13 [+2.93, +5.36]) | 36.54% (+6.28 [+5.32, +7.21]) | 38.31% (+16.80) | 2,414 |
+| A. seed 123, update 39 | 40.51% (+1.96 [+0.99, +2.93]) | 35.16% (+4.90 [+4.12, +5.64]) | 33.54% (+12.03) | 1,859 |
+
+**The method improves joint F1 and grounded success on the held-out test set in all three seeds** (mean +6.5 joint F1, sd 1.7); the size of the gain depends on the seed. On the development set, same-data baselines do not reproduce it: supervised fine-tuning on the identical verified corrections +2.5 joint F1, DPO +0.8, rejection-sampling self-training −3.3, evidence-only guidance at a stable learning rate −1.3 (A − baseline contrasts +6.3 to +12.1, all intervals clear of zero). The random-step control reproduces it in one seed of three (+1.6 / collapsed / +8.3), so the diagnosed critical step is what makes the outcome reliable (3/3 positive, no collapse) rather than what makes it large. Continuing training to 5,000 questions gives no further gain (update 65 vs update 32: −1.2 joint F1 [−2.6, +0.3]). Trained policies exhaust the tool budget two to three times as often as the original model — the clearest remaining inefficiency. See the cycle-2 report for every arm, the paired contrasts (`results/contrasts/`, `scripts/contrast_evaluations.py`) and the caveats.
+
 **Round-2 result (21–25 September 2026)**
 
-Round 1 measured no clear gain. Its diagnosis (`docs/UPGRADE_PLAN.md`) found the guidance JSON in a dialect the model rarely emits (the gradient taught whitespace), corrections that named entities the student could not see, a teacher that preferred to finish when shown the evidence, and a BM25 top-2 retrieval ceiling. Round 2 addressed those, gated the learning rate on a memorization check, and ran the method with three controls on one RTX 5090. Arms A/D/C each completed 2,500 collection questions; B stopped after 89. All were evaluated on the same 1,500 development questions, paired against the original model. The development set was also used for tuning; the locked final benchmark is pending.
+Round 1 measured no clear gain. Its diagnosis (`docs/UPGRADE_PLAN.md`) found the guidance JSON in a dialect the model rarely emits (the gradient taught whitespace), corrections that named entities the student could not see, a teacher that preferred to finish when shown the evidence, and a BM25 top-2 retrieval ceiling. Round 2 addressed those, gated the learning rate on a memorization check, and ran the method with three controls on one RTX 5090. Arms A/D/C each completed 2,500 collection questions; B stopped after 89. All were evaluated on the same 1,500 development questions, paired against the original model. The development set was also used for tuning; the locked final benchmark was opened in cycle 2 (above).
 
 | Arm | Updates | Answer EM | Joint F1 | Grounded success |
 | --- | ---: | ---: | ---: | ---: |
@@ -27,7 +40,7 @@ Round 1 measured no clear gain. Its diagnosis (`docs/UPGRADE_PLAN.md`) found the
 | C. same repair procedure, DPO instead of OPSD | 22 | 52.67% (+1.33) | 36.93% (+0.81 [−0.62, +2.30]) | 33.53% (+9.07) |
 | B. plain privileged-context OPSD (evidence-only guidance) | 20, stopped by tripwire | 12.40% (−38.93) | 7.06% (−29.06) | 0.00% (−24.47) |
 
-**Arm A shows a clear development gain in this seed.** It exceeds random-step training (A − D: +7.2 joint F1 [+5.7, +8.6]) and DPO (A − C: +8.0 [+6.2, +9.7]). The evidence-only control collapses into answering without retrieving, but also removes diagnosis and verification, so it does not isolate guidance alone. On-policy records and update counts differ across arms. Single seed per arm; the locked final benchmark is still pending. See the round-2 report for the gate, all metrics, contrasts, and limitations.
+**Arm A shows a clear development gain in this seed.** It exceeds random-step training (A − D: +7.2 joint F1 [+5.7, +8.6]) and DPO (A − C: +8.0 [+6.2, +9.7]). The evidence-only control collapses into answering without retrieving, but also removes diagnosis and verification, so it does not isolate guidance alone. On-policy records and update counts differ across arms. Single seed per arm in this round; cycle 2 (above) adds two seeds of A and D and the locked final benchmark. See the round-2 report for the gate, all metrics, contrasts, and limitations.
 
 **Round-1 result**
 
@@ -39,7 +52,7 @@ Completed on one local RTX 5090: 5,000 collection questions, 198 verified repair
 | Joint F1 | 37.44% | 38.08% |
 | Grounded success | 27.60% | 26.60% |
 
-**Round 1 established no clear learning improvement.** Its joint-F1 change is +0.63 percentage points with a paired 95% interval of [-0.91, +2.14]. Round 2 and its controls are reported above. The 7,405-question final benchmark, fixed repair benchmark, and additional training seeds remain pending. See the round-1 results report for all historical metrics and limitations.
+**Round 1 established no clear learning improvement.** Its joint-F1 change is +0.63 percentage points with a paired 95% interval of [-0.91, +2.14]. Round 2 and its controls are reported above. The 7,405-question final benchmark and additional training seeds are reported under cycle 2; the fixed repair benchmark remains pending. See the round-1 results report for all historical metrics and limitations.
 
 **Setup**
 

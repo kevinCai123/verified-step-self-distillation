@@ -1,0 +1,61 @@
+{
+  "questions": 1500,
+  "baseline": "runs/round1b-seed42-cont/evaluations/step-032",
+  "updated": "runs/round1b-seed42-cont/evaluations/step-065",
+  "baseline_policy": "adapter:52a0ec4541309a2cf8565940b39e9c662e8a3ed7c28bade74ce77835da25b2b7",
+  "updated_policy": "adapter:38d63dc6205391ed97efbf6653551e273104d98eb81f68bec135f4800e3c8618",
+  "protocol_sha256": [
+    "bfc958a857f13fef86e7852cbe3245566db1fcc9c1bfde61715c2e55a47cab79",
+    "2ed90278ea67a101e367552aa61d28554cb87588bfcaa08240311b58352b2e22"
+  ],
+  "bootstrap_samples": 2000,
+  "bootstrap_seed": 42,
+  "scope": "internal development, arm-vs-arm paired contrast",
+  "metrics": {
+    "answer_em": {
+      "baseline": 0.5886666666666667,
+      "updated": 0.5886666666666667,
+      "delta": 0.0,
+      "paired_ci95": [
+        -0.019333333333333334,
+        0.018666666666666668
+      ]
+    },
+    "answer_f1": {
+      "baseline": 0.6542463068259533,
+      "updated": 0.6627875301112143,
+      "delta": 0.008541223285261038,
+      "paired_ci95": [
+        -0.010752977394233762,
+        0.026947396741434492
+      ]
+    },
+    "support_f1": {
+      "baseline": 0.5145285714285714,
+      "updated": 0.5051206349206349,
+      "delta": -0.009407936507936508,
+      "paired_ci95": [
+        -0.023469841269841245,
+        0.005682539682539682
+      ]
+    },
+    "joint_f1": {
+      "baseline": 0.4493702316812415,
+      "updated": 0.437671046928757,
+      "delta": -0.011699184752484444,
+      "paired_ci95": [
+        -0.02571824941052741,
+        0.0033530699477888446
+      ]
+    },
+    "grounded_success": {
+      "baseline": 0.4553333333333333,
+      "updated": 0.412,
+      "delta": -0.043333333333333335,
+      "paired_ci95": [
+        -0.06466666666666666,
+        -0.02266666666666667
+      ]
+    }
+  }
+}
