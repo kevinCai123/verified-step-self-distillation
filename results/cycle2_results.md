@@ -2,9 +2,13 @@
 
 All deltas are paired against the base model (Qwen3.5-9B, greedy) on the same questions; 95% intervals are question-bootstrap (2,000 draws, seed 42). Development set: 1,500 internal questions. Final benchmark: the locked 7,405 official HotpotQA dev questions, opened once per policy.
 
-## Development set: arms vs base (joint F1 is the headline; grounded success = answer correct and every cited passage retrieved)
+## Development set: arms vs base
 
-| Arm | Updates | Budget failures (base 181) | Joint F1 Δ | EM Δ | Answer F1 Δ | Support F1 Δ | Grounded Δ |
+Joint F1 is the headline. Grounded success requires answer exact match, valid nonempty citations to
+observed sentences, and exposure to every gold supporting fact. Runtime failures count every recorded
+execution error, not only tool-budget exhaustion.
+
+| Arm | Updates | Runtime failures (base 181) | Joint F1 Δ | EM Δ | Answer F1 Δ | Support F1 Δ | Grounded Δ |
 |---|---|---|---|---|---|---|---|
 | A (critical-step OPSD) seed 42 | 32 | 316 | +8.81 [+6.95, +10.72] | +7.53 [+5.13, +10.07] | +5.29 [+2.91, +7.70] | +1.68 [-0.13, +3.34] | +21.07 [+18.47, +23.60] |
 | A seed 7 | 43 | 457 | +6.23 [+4.01, +8.25] | +3.33 [+0.60, +6.07] | -0.19 [-2.93, +2.42] | -1.94 [-3.99, -0.04] | +23.47 [+20.53, +26.07] |
@@ -36,7 +40,7 @@ Arm D across three seeds: +1.64, -34.42, +8.27 (mean -8.17; excluding the collap
 
 ## Arm A continued from update 32 to 5,000 questions (seed 42, development set)
 
-| Checkpoint | Budget failures | Joint F1 | Joint F1 Δ vs base | EM Δ | Support F1 Δ | Grounded Δ |
+| Checkpoint | Runtime failures | Joint F1 | Joint F1 Δ vs base | EM Δ | Support F1 Δ | Grounded Δ |
 |---|---|---|---|---|---|---|
 | step-032 | 316 | 44.94 | +8.81 [+6.95, +10.72] | +7.53 [+5.13, +10.07] | +1.68 [-0.13, +3.34] | +21.07 [+18.47, +23.60] |
 | step-048 | 113 | 41.32 | +5.19 [+3.58, +6.90] | +8.53 [+6.33, +10.80] | -0.37 [-1.80, +1.09] | +5.53 [+3.07, +7.93] |
@@ -45,9 +49,9 @@ Arm D across three seeds: +1.64, -34.42, +8.27 (mean -8.17; excluding the collap
 
 ## Locked final benchmark (7,405 official HotpotQA dev questions, paired vs base)
 
-Base model: EM 38.56, answer F1 51.10, support F1 47.20, joint F1 30.27, grounded 21.51; budget failures 993.
+Base model: EM 38.56, answer F1 51.10, support F1 47.20, joint F1 30.27, grounded 21.51; runtime failures 993.
 
-| Policy | Budget failures | Joint F1 | Joint F1 Δ | EM Δ | Answer F1 Δ | Support F1 Δ | Grounded Δ |
+| Policy | Runtime failures | Joint F1 | Joint F1 Δ | EM Δ | Answer F1 Δ | Support F1 Δ | Grounded Δ |
 |---|---|---|---|---|---|---|---|
 | A seed 42 (update 32) | 1655 | 38.56 | +8.30 [+7.41, +9.11] | +7.27 [+6.23, +8.37] | +5.79 [+4.73, +6.87] | +1.91 [+1.12, +2.69] | +15.98 [+14.85, +17.08] |
 | A seed 7 (update 43) | 2414 | 36.54 | +6.28 [+5.32, +7.21] | +4.13 [+2.93, +5.36] | +0.88 [-0.30, +2.08] | -1.86 [-2.72, -0.98] | +16.80 [+15.60, +17.97] |

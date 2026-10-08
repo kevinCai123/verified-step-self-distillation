@@ -17,16 +17,16 @@ This adapts CSO-style verified step repair to same-model self-distillation. It i
 
 **Cycle-2 result (28 September – 8 October 2026): the gain reproduces and transfers**
 
-Cycle 2 re-ran the method with two more training seeds, ran the random-step control with the same three seeds, added three same-data baselines, continued the seed-42 run to twice the data, and opened the locked final benchmark (the 7,405 official HotpotQA dev questions, once per policy). Paired against the original model on that test set:
+Cycle 2 re-ran the method with two more training seeds, ran the random-step control with the same three seeds, added three baselines using the same question pool, continued the seed-42 run to twice the data, and opened the locked final benchmark (the 7,405 official HotpotQA dev questions, once per policy). Paired against the original model on that test set:
 
-| Policy | Answer EM | Joint F1 | Grounded success | Budget failures |
+| Policy | Answer EM | Joint F1 | Grounded success | Runtime failures |
 | --- | ---: | ---: | ---: | ---: |
 | Original model | 38.56% | 30.27% | 21.51% | 993 |
 | **A. seed 42, update 32** | **45.82% (+7.27 [+6.23, +8.37])** | **38.56% (+8.30 [+7.41, +9.11])** | **37.49% (+15.98)** | 1,655 |
 | A. seed 7, update 43 | 42.69% (+4.13 [+2.93, +5.36]) | 36.54% (+6.28 [+5.32, +7.21]) | 38.31% (+16.80) | 2,414 |
 | A. seed 123, update 39 | 40.51% (+1.96 [+0.99, +2.93]) | 35.16% (+4.90 [+4.12, +5.64]) | 33.54% (+12.03) | 1,859 |
 
-**The method improves joint F1 and grounded success on the held-out test set in all three seeds** (mean +6.5 joint F1, sd 1.7); the size of the gain depends on the seed. On the development set, same-data baselines do not reproduce it: supervised fine-tuning on the identical verified corrections +2.5 joint F1, DPO +0.8, rejection-sampling self-training −3.3, evidence-only guidance at a stable learning rate −1.3 (A − baseline contrasts +6.3 to +12.1, all intervals clear of zero). The random-step control reproduces it in one seed of three (+1.6 / collapsed / +8.3), so the diagnosed critical step is what makes the outcome reliable (3/3 positive, no collapse) rather than what makes it large. Continuing training to 5,000 questions gives no further gain (update 65 vs update 32: −1.2 joint F1 [−2.6, +0.3]). Trained policies exhaust the tool budget two to three times as often as the original model — the clearest remaining inefficiency. See the cycle-2 report for every arm, the paired contrasts (`results/contrasts/`, `scripts/contrast_evaluations.py`) and the caveats.
+**The method improves joint F1 and grounded success on the held-out test set in all three seeds** (mean +6.5 joint F1, sd 1.7); the size of the gain depends on the seed. Development joint-F1 changes are +2.5 for SFT using the same verified-repair procedure, +0.8 for DPO, −3.3 for rejection-sampling self-training, and −1.3 for lower-rate evidence-only guidance. These baselines collect different on-policy records and have different update counts; they are not comparisons on identical training records. A exceeds them by +6.3 to +12.1 points, with paired intervals clear of zero. Random-step training improves clearly in one of three seeds (+1.6 with an interval crossing zero / collapsed / +8.3); A improves in all three without collapse, suggesting greater stability in this small sample. Continuing to 5,000 questions gives no clear further gain (update 65 vs update 32: −1.2 joint F1 [−2.6, +0.3]). Runtime failures rise from 993 to 1,655–2,414 on the final set; this count includes all recorded execution errors, not just tool-budget exhaustion. See the cycle-2 report for every arm, paired contrasts, and limitations.
 
 **Round-2 result (21–25 September 2026)**
 

@@ -1,4 +1,4 @@
-**Self-Evolve Search — cycle 2: seeds, same-data baselines, a fair evidence-only control, a longer run, and the locked test set**
+**Self-Evolve Search — cycle 2: seeds, objective and data controls, a lower-rate evidence-only control, a longer run, and the locked test set**
 
 Updated 8 October 2026. Round 2 (the method and its first three controls, one seed) is documented in [`self_evolve_search_round2_results.md`](self_evolve_search_round2_results.md); round 1 in [`self_evolve_search_results.md`](self_evolve_search_results.md); the plan in [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md).
 
@@ -7,7 +7,7 @@ Updated 8 October 2026. Round 2 (the method and its first three controls, one se
 Cycle 2 ran unattended from 28 September 22:02 to 8 October 08:22 Singapore time
 (`scripts/run_cycle2.sh` via `scripts/launch_cycle2.cmd`; step log `runs/cycle2/cycle.log`). It asked
 the questions a reviewer would ask of the round-2 result: does it survive a second and third training
-seed; does it transfer to the locked test set; do cheaper objectives on the same data reproduce it; does
+seed; does it transfer to the locked test set; do cheaper objectives using the same repair procedure reproduce it; does
 the evidence-only control still fail when it is given a learning rate at which it does not collapse; and
 what happens with twice the data. All numbers below are in `results/cycle2_results.json` and
 `results/cycle2_results.md`; arm-vs-arm contrasts are in `results/contrasts/` (made with
@@ -18,9 +18,11 @@ what happens with twice the data. All numbers below are in `results/cycle2_resul
 The final benchmark is the 7,405 official HotpotQA development questions
 (`data/splits/final_eval.jsonl`, `scripts/make_final_split.py`), evaluated once per policy by
 `scripts/evaluate_policy.sh` and never used for tuning. Base model: EM 38.56, answer F1 51.10,
-support F1 47.20, joint F1 30.27, grounded success 21.51, with 993 tool-budget failures.
+support F1 47.20, joint F1 30.27, grounded success 21.51, with 993 runtime failures.
+Failure counts come from `summary.json.failures`: all recorded execution errors, including budget
+exhaustion and invalid actions. They are not counts of tool-budget exhaustion alone.
 
-| Arm A checkpoint | Joint F1 | Joint F1 Δ | EM Δ | Answer F1 Δ | Support F1 Δ | Grounded Δ | Budget failures |
+| Arm A checkpoint | Joint F1 | Joint F1 Δ | EM Δ | Answer F1 Δ | Support F1 Δ | Grounded Δ | Runtime failures |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | seed 42, update 32 | 38.56 | **+8.30** [+7.41, +9.11] | +7.27 [+6.23, +8.37] | +5.79 [+4.73, +6.87] | +1.91 [+1.12, +2.69] | +15.98 [+14.85, +17.08] | 1,655 |
 | seed 7, update 43 | 36.54 | **+6.28** [+5.32, +7.21] | +4.13 [+2.93, +5.36] | +0.88 [−0.30, +2.08] | −1.86 [−2.72, −0.98] | +16.80 [+15.60, +17.97] | 2,414 |
@@ -28,60 +30,65 @@ support F1 47.20, joint F1 30.27, grounded success 21.51, with 993 tool-budget f
 
 Every seed improves joint F1 and grounded success on the test set with intervals well clear of zero
 (mean joint F1 Δ +6.49, sd 1.71 across seeds; mean EM Δ +4.45, sd 2.67). The size of the gain depends
-on the seed: seed 42 is the strongest on every metric, seeds 7 and 123 gain mostly through grounding and
+on the seed: seed 42 has the largest answer and joint-F1 gains, while seed 7 has the largest grounding gain.
+Seeds 7 and 123 gain mostly through grounding and
 joint F1 with small or null answer-F1 change, and seed 7 loses support F1. All three trained policies
-exhaust the tool budget far more often than the base model (1,655–2,414 vs 993 of 7,405 questions),
-which is the clearest remaining inefficiency of the method: it searches more, and sometimes searches
-past the budget, rather than searching better on every question.
+have more runtime failures than the base model (1,655–2,414 vs 993 of 7,405 questions).
+The higher failure rate remains an operational weakness despite the score gains.
 
 The development-set gains per seed are +8.81 [+6.95, +10.72], +6.23 [+4.01, +8.25] and +6.32 [+4.62, +8.00]
 joint F1 (mean +7.12, sd 1.46), each with a premature-finish share of zero on the serving checks
-throughout training; the development ordering of the seeds is the same as on the test set.
+throughout training. Seed 42 leads joint F1 on both splits; seeds 7 and 123 reverse order between
+development and final evaluation.
 
 ## Random-step selection: the same ingredient, less reliable
 
 Arm D (verified teacher correction at a seeded random step instead of the diagnosed critical step,
-everything else identical) was run with the same three seeds:
+the same repair procedure otherwise) was run with the same three seeds. Its collected records and
+number of updates differ from A:
 
-| Arm D | Updates | Joint F1 Δ vs base | Support F1 Δ | Budget failures | A − D (paired, joint F1) |
+| Arm D | Updates | Joint F1 Δ vs base | Support F1 Δ | Runtime failures | A − D (paired, joint F1) |
 | --- | --- | --- | --- | --- | --- |
 | seed 42 | 23 | +1.64 [−0.44, +3.71] | −6.49 | 396 | +7.18 [+5.67, +8.63] |
 | seed 7 | 31 | −34.42 [−36.12, −32.59] (collapsed) | −47.34 | 1,424 | +40.66 |
 | seed 123 | 21 | **+8.27** [+6.45, +10.14] | +4.13 | 36 | −1.96 [−3.56, −0.33] |
 
 Seed 123 of the random-step control is as good as the best arm-A seed — better on EM (+8.80) and with
-the fewest budget failures of any policy — while seed 42 is within noise of base and seed 7 collapsed
+the fewest runtime failures among these development policies — while seed 42 is within noise of base and seed 7 collapsed
 from update 25 into reading a fabricated document id (`doc_1`) on every question, a failure the
 premature-finish tripwire does not catch. So the round-2 reading that "step selection carries the
-answer gain" was a one-seed artefact. What the three seeds show instead is that the shared ingredient of
-A and D — a verified, replay-screened teacher correction distilled by matching action-token
-distributions — produces the gain, and that choosing the diagnosed critical step makes the outcome
-reliable: arm A is positive on 3/3 seeds with no collapse (dev joint F1 +6.2 to +8.8), arm D is
-positive on 1/3 (+1.6 / collapsed / +8.3; mean −8.2, or +5.0 excluding the collapse). The claim this supports is
-about variance, not mean: critical-step selection is a stabiliser, and the controls that remove the
-verified correction itself are the ones that lose the gain outright.
+answer gain" does not hold uniformly across seeds. A and D share verified, replay-screened corrections
+and action-token distribution matching, but these experiments do not isolate which shared ingredient
+causes the gain. Arm A has positive joint-F1 intervals in 3/3 seeds with no collapse (dev +6.2 to +8.8),
+while D has one such seed (+1.6 with an interval crossing zero / collapsed / +8.3; mean −8.2).
+Excluding D's collapse gives a descriptive mean of +5.0, but the collapse remains part of the result.
+Diagnosed step selection appears more stable in this sample; three seeds are insufficient to establish
+its general reliability or precisely estimate its variance advantage.
 
-## Objectives and baselines on the same records (seed 42, development set)
+## Objectives and data controls (seed 42, development set)
+
+S and C use A's repair procedure but collect their own on-policy records. The saved batches contain
+70 unique records / 256 record-uses for A, 68 / 248 for S, and 50 / 176 for C. R collects successful
+student steps; B′ uses evidence-only guidance. These are not comparisons on identical training records.
 
 | Arm | What it changes | Joint F1 Δ vs base | EM Δ | Grounded Δ | A − arm (joint F1) |
 | --- | --- | --- | --- | --- | --- |
-| S | SFT cross-entropy on arm A's verified corrections (same records, no distribution matching) | +2.52 [+1.01, +4.08] | −5.47 | +11.47 | +6.29 [+4.26, +8.35] |
-| C | DPO (β 0.1) on the same pairs | +0.81 [−0.62, +2.30] | +1.33 | +9.07 | +8.01 [+6.22, +9.66] |
+| S | SFT cross-entropy on independently collected verified corrections using A's repair procedure | +2.52 [+1.01, +4.08] | −5.47 | +11.47 | +6.29 [+4.26, +8.35] |
+| C | DPO (β 0.1) on independently collected pairs using A's repair procedure | +0.81 [−0.62, +2.30] | +1.33 | +9.07 | +8.01 [+6.22, +9.66] |
 | R | rejection-sampling self-training: SFT on the student's own grounded-successful steps, no teacher | −3.28 [−4.69, −1.83] | −5.93 | +9.53 | +12.09 [+10.26, +14.10] |
 | B′ | evidence-only teacher guidance, OPSD at 5e-6 (no collapse; premature-finish share stayed in the base range) | −1.27 [−2.25, −0.33] | −0.87 | −2.60 | +10.08 [+8.26, +11.94] |
 | B | evidence-only guidance at 2e-5 (tripwire at update 20) | −29.06 | −38.93 | −24.47 | — |
 
-Three things fall out. Supervised fine-tuning on the identical verified corrections recovers less
-than a third of the joint-F1 gain and loses answer accuracy, so the gain is not "any training on these
-records"; the full-vocabulary distribution match against the corrected teacher matters. Self-training
-without a teacher (R) is harmful: imitating one's own successes reinforces grounding but costs answers.
-And the fair-rate evidence-only control settles the question round 2 left open: given a learning rate
-at which it trains stably for 32 updates, evidence-only guidance still yields no gain (a small loss),
-so the correction content — not the privileged context — is what the teacher contributes.
+SFT shows less than a third of A's joint-F1 gain and loses answer accuracy in this run. This supports
+further testing of OPSD, but different records and update counts limit an objective-only explanation.
+Self-training without a teacher (R) improves grounding while reducing answer and joint-F1 scores in
+this seed. Evidence-only guidance at 5e-6 avoids the earlier collapse but still gives a small joint-F1
+loss after 32 updates. B′ also differs in diagnosis, verification, records, and learning rate; it does
+not isolate correction content from privileged context by itself.
 
 ## Longer training (seed 42, update 32 → 65, questions 2,500–5,000)
 
-| Checkpoint | Joint F1 | Joint F1 Δ vs base | Grounded Δ | Budget failures |
+| Checkpoint | Joint F1 | Joint F1 Δ vs base | Grounded Δ | Runtime failures |
 | --- | --- | --- | --- | --- |
 | update 32 (reported) | 44.94 | +8.81 [+6.95, +10.72] | +21.07 | 316 |
 | update 48 | 41.32 | +5.19 [+3.58, +6.90] | +5.53 | 113 |
@@ -90,7 +97,7 @@ so the correction content — not the privileged context — is what the teacher
 
 Update 65 against update 32, paired: joint F1 −1.17 [−2.57, +0.34], EM 0.00, grounded −4.33
 [−6.47, −2.27]. Doubling the data gives no further gain and the policy oscillates — it traded most of
-its grounding for finishing within budget around update 48 and then recovered — so the update-32
+its grounding alongside fewer runtime failures around update 48 and then recovered — so the update-32
 checkpoint is the one to report, and the scaling claim is "the gain saturates by ~2,500 questions in
 one round", not "more data helps". A second round with the updated teacher (Phase 3) remains the untested
 route to more.
